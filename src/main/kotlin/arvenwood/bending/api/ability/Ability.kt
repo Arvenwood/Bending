@@ -15,6 +15,8 @@ interface Ability<out T : Ability<T>> : CoroutineContext.Element {
 
     suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult
 
+    fun cleanup(context: AbilityContext) {}
+
     override val key: CoroutineContext.Key<*> get() = CoroutineKey
 
     companion object CoroutineKey : CoroutineContext.Key<Ability<*>>

@@ -4,6 +4,7 @@ import arvenwood.bending.api.ability.AbilityType
 import arvenwood.bending.api.ability.air.AirBlastAbility
 import arvenwood.bending.api.ability.air.AirJumpAbility
 import arvenwood.bending.api.ability.air.AirShieldAbility
+import arvenwood.bending.api.ability.air.AirSpoutAbility
 import arvenwood.bending.api.ability.fire.*
 
 class AbilityTypeCatalogRegisterModule : HashMapCatalogRegistryModule<AbilityType<*>>() {
@@ -11,6 +12,7 @@ class AbilityTypeCatalogRegisterModule : HashMapCatalogRegistryModule<AbilityTyp
         this.registerAdditionalCatalog(AirBlastAbility)
         this.registerAdditionalCatalog(AirJumpAbility)
         this.registerAdditionalCatalog(AirShieldAbility)
+        this.registerAdditionalCatalog(AirSpoutAbility)
 
         this.registerAdditionalCatalog(CombustionAbility)
         this.registerAdditionalCatalog(FireBlastAbility)

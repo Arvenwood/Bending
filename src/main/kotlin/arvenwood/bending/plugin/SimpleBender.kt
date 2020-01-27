@@ -89,6 +89,7 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
 
         job = GlobalScope.launch(coroutine) {
             ability.execute(context, executionType)
+            ability.cleanup(context)
             this@SimpleBender.running.remove(job)
         }
         execution = SimpleAbilityExecution(job)
@@ -97,7 +98,10 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
     }
 
     private fun cancelAbility(context: CoroutineContext, throwable: Throwable) {
-        val player: Player = context[AbilityContext]?.get(StandardContext.player) ?: return
+        val ability: Ability<*> = context[Ability] ?: return
+        val abilityContext: AbilityContext = context[AbilityContext] ?: return
+
+        ability.cleanup(abilityContext)
 
         val job: Job = context[Job]!!
         this.running.remove(job)
