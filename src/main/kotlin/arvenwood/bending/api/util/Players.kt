@@ -27,7 +27,7 @@ inline fun Player.getTargetLocation(range: Double, checkDiagonals: Boolean = tru
     var location: Location<World> = this.eyeLocation
 
     var i = 0.0
-    while (i < range) {
+    while (i < range - 1) {
         location = location.add(increment)
 
         if (checkDiagonals && location.isNearDiagonalWall(increment)) {
@@ -43,7 +43,7 @@ inline fun Player.getTargetLocation(range: Double, checkDiagonals: Boolean = tru
         i += 0.2
     }
 
-    return Location(location.extent, location.blockPosition)
+    return location
 }
 
 @JvmOverloads
