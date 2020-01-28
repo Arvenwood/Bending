@@ -1,14 +1,22 @@
 package arvenwood.bending.plugin
 
 import arvenwood.bending.api.Bender
-import arvenwood.bending.api.ability.*
+import arvenwood.bending.api.ability.AbilityType
+import arvenwood.bending.api.ability.air.*
+import arvenwood.bending.api.ability.fire.*
 import arvenwood.bending.api.element.Element
+import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.protection.BuildProtection
+import arvenwood.bending.api.protection.BuildProtectionService
+import arvenwood.bending.api.protection.PvpProtection
+import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.service.*
-import arvenwood.bending.api.util.get
-import arvenwood.bending.api.util.index
+import arvenwood.bending.api.util.registerModule
 import arvenwood.bending.api.util.setProvider
-import arvenwood.bending.plugin.registry.AbilityTypeCatalogRegisterModule
-import arvenwood.bending.plugin.registry.ElementCatalogRegistryModule
+import arvenwood.bending.plugin.protection.GriefDefenderProtection
+import arvenwood.bending.plugin.protection.SimpleBuildProtectionService
+import arvenwood.bending.plugin.protection.SimplePvpProtectionService
+import arvenwood.bending.plugin.registry.HashMapCatalogRegistryModule
 import arvenwood.bending.plugin.service.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -16,49 +24,71 @@ import org.slf4j.Logger
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.command.CommandException
 import org.spongepowered.api.command.CommandResult
+import org.spongepowered.api.command.CommandSource
+import org.spongepowered.api.command.args.CommandContext
 import org.spongepowered.api.command.args.GenericArguments
 import org.spongepowered.api.command.spec.CommandSpec
-import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.Listener
-import org.spongepowered.api.event.block.InteractBlockEvent
-import org.spongepowered.api.event.data.ChangeDataHolderEvent
-import org.spongepowered.api.event.entity.InteractEntityEvent
-import org.spongepowered.api.event.filter.cause.First
+import org.spongepowered.api.event.game.GameRegistryEvent
 import org.spongepowered.api.event.game.state.GameInitializationEvent
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent
-import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent
-import org.spongepowered.api.event.network.ClientConnectionEvent
+import org.spongepowered.api.event.game.state.GameStartingServerEvent
+import org.spongepowered.api.plugin.Dependency
 import org.spongepowered.api.plugin.Plugin
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.chat.ChatTypes
-import org.spongepowered.api.text.format.TextStyles
+import org.spongepowered.api.text.format.TextColors
 import javax.inject.Inject
 
-@Plugin(id = "bending", name = "Bending", version = "0.1.0")
+@Plugin(
+    id = "bending", name = "Bending", version = "0.1.0",
+    dependencies = [
+        Dependency(id = "griefdefender", version = "[1.2.4,)", optional = true)
+    ],
+    description = "Avatar: The Last Airbender in Minecraft!",
+    url = "https://ore.spongepowered.org/doot/Bending",
+    authors = ["doot"]
+)
 class Bending @Inject constructor(private val logger: Logger) {
 
     companion object {
-        @JvmStatic
         internal lateinit var ASYNC: CoroutineDispatcher
+            private set
 
-        @JvmStatic
         internal lateinit var SYNC: CoroutineDispatcher
+            private set
     }
 
     @Listener
     fun onPreInit(event: GamePreInitializationEvent) {
-        Sponge.getRegistry().registerModule(AbilityType::class.java, AbilityTypeCatalogRegisterModule())
-        Sponge.getRegistry().registerModule(Element::class.java, ElementCatalogRegistryModule())
+        ASYNC = Sponge.getScheduler().createAsyncExecutor(this).asCoroutineDispatcher()
+        SYNC = Sponge.getScheduler().createSyncExecutor(this).asCoroutineDispatcher()
+
+        this.logger.info("Registering catalog modules...")
+
+        Sponge.getRegistry().registerModule<AbilityType<*>>(HashMapCatalogRegistryModule())
+        Sponge.getRegistry().registerModule<Element>(HashMapCatalogRegistryModule())
+        Sponge.getRegistry().registerModule<BuildProtection>(HashMapCatalogRegistryModule())
+        Sponge.getRegistry().registerModule<PvpProtection>(HashMapCatalogRegistryModule())
     }
 
     @Listener
     fun onInit(event: GameInitializationEvent) {
-        ASYNC = Sponge.getScheduler().createAsyncExecutor(this).asCoroutineDispatcher()
-        SYNC = Sponge.getScheduler().createSyncExecutor(this).asCoroutineDispatcher()
-
         registerServices()
         registerCommands()
+
+        this.logger.info("Registering listeners...")
+
+        Sponge.getEventManager().registerListeners(this, BendingListener())
+    }
+
+    @Listener
+    fun onStarting(event: GameStartingServerEvent) {
+        this.logger.info("Registering protection services...")
+
+        Sponge.getServiceManager().setProvider<BuildProtectionService>(this, SimpleBuildProtectionService())
+        Sponge.getServiceManager().setProvider<PvpProtectionService>(this, SimplePvpProtectionService())
     }
 
     private fun registerServices() {
@@ -68,80 +98,101 @@ class Bending @Inject constructor(private val logger: Logger) {
         Sponge.getServiceManager().setProvider<BenderService>(this, SimpleBenderService())
         Sponge.getServiceManager().setProvider<ProtectionService>(this, EmptyProtectionService)
         Sponge.getServiceManager().setProvider<CooldownService>(this, SimpleCooldownService())
+        Sponge.getServiceManager().setProvider<EffectService>(this, SimpleEffectService())
     }
 
     private fun registerCommands() {
         this.logger.info("Registering commands...")
 
-        val bind = CommandSpec.builder()
+        val bind: CommandSpec = CommandSpec.builder()
+            .permission("bending.user.bind")
             .arguments(GenericArguments.catalogedElement(Text.of("ability"), AbilityType::class.java))
-            .executor { src, args ->
+            .executor { src: CommandSource, args: CommandContext ->
                 if (src !is Player) throw CommandException(Text.of("You must be a player to run this command!"))
 
                 val ability: AbilityType<*> = args.requireOne("ability")
-                BenderService.get()[src].selectedAbility = ability.default
+                BenderService.get()[src.uniqueId].selectedAbility = ability.default
                 src.sendMessage(ChatTypes.ACTION_BAR, Text.of("Selected Ability: ", ability.element.color, ability.name))
 
                 CommandResult.success()
             }
             .build()
 
-        val bending = CommandSpec.builder()
+        val clear: CommandSpec = CommandSpec.builder()
+            .permission("bending.user.clear")
+            .executor { src: CommandSource, args: CommandContext ->
+                if (src !is Player) throw CommandException(Text.of("You must be a player to run this command!"))
+
+                BenderService.get()[src.uniqueId].clearEquipped()
+                src.sendMessage(Text.of(TextColors.GREEN, "Cleared all equipped abilities."))
+
+                CommandResult.success()
+            }
+            .build()
+
+        val copy: CommandSpec = CommandSpec.builder()
+            .permission("bending.user.copy")
+            .arguments(GenericArguments.player(Text.of("player")))
+            .executor { src, args ->
+                if (src !is Player) throw CommandException(Text.of("You must be a player to run this command!"))
+
+                val target: Player = args.requireOne("player")
+
+                val srcBender: Bender = BenderService.get()[src.uniqueId]
+                val targetBender: Bender = BenderService.get()[target.uniqueId]
+
+                srcBender.clearEquipped()
+                for ((index, ability) in targetBender.equippedAbilities) {
+                    srcBender[index] = ability
+                }
+
+                CommandResult.success()
+            }
+            .build()
+
+        val bending: CommandSpec = CommandSpec.builder()
             .child(bind, "bind", "b")
+            .child(clear, "clear")
+            .child(copy, "copy")
             .build()
 
         Sponge.getCommandManager().register(this, bending, "bending", "b")
     }
 
     @Listener
-    fun onJoin(event: ClientConnectionEvent.Join) {
-        displayAbility(event.targetEntity)
+    fun onRegisterElement(event: GameRegistryEvent.Register<Element>) {
+        // Register the classical elements.
+
+        event.register(Elements.Water)
+        event.register(Elements.Earth)
+        event.register(Elements.Fire)
+        event.register(Elements.Air)
+    }
+    
+    @Listener
+    fun onRegisterAbilityType(event: GameRegistryEvent.Register<AbilityType<*>>) {
+        // Register the builtin abilities.
+
+        event.register(AirBlastAbility)
+        event.register(AirJumpAbility)
+        event.register(AirShieldAbility)
+        event.register(AirSpoutAbility)
+        event.register(AirTornadoAbility)
+
+        event.register(CombustionAbility)
+        event.register(FireBlastAbility)
+        event.register(FireJetAbility)
+        event.register(FireShieldAbility)
+        event.register(FireWallAbility)
     }
 
     @Listener
-    fun onChangeSlot(event: ChangeInventoryEvent.Held, @First player: Player) {
-        val oldSlot: Int = event.originalSlot.index
-        val newSlot: Int = event.finalSlot.index
-
-        if (oldSlot == newSlot) return
-
-        displayAbility(player)
-    }
-
-    private fun displayAbility(player: Player) {
-        val type: AbilityType<Ability<*>>? = BenderService.get()[player].selectedAbility?.type
-        if (type != null) {
-            val onCooldown: Boolean = CooldownService.get().hasCooldown(player, type)
-            if (onCooldown) {
-                player.sendMessage(ChatTypes.ACTION_BAR, Text.of(type.element.color, TextStyles.STRIKETHROUGH, type.name))
-            } else {
-                player.sendMessage(ChatTypes.ACTION_BAR, Text.of(type.element.color, type.name))
-            }
-        } else {
-            player.sendMessage(ChatTypes.ACTION_BAR, Text.of("<none>"))
-        }
+    fun onRegisterBuildProtection(event: GameRegistryEvent.Register<BuildProtection>) {
+        GriefDefenderProtection.load()?.let(event::register)
     }
 
     @Listener
-    fun onLeftClick(event: InteractBlockEvent.Primary.MainHand, @First player: Player) {
-        val bender: Bender = BenderService.get()[player]
-        val ability: Ability<*> = bender.selectedAbility ?: return
-        bender.execute(ability, AbilityExecutionType.LEFT_CLICK)
-    }
-
-    @Listener
-    fun onRightClick(event: InteractEntityEvent.Secondary.MainHand, @First player: Player) {
-        val bender: Bender = BenderService.get()[player]
-        val ability: Ability<*> = bender.selectedAbility ?: return
-        bender.execute(ability, AbilityExecutionType.RIGHT_CLICK)
-    }
-
-    @Listener
-    fun onSneak(event: ChangeDataHolderEvent.ValueChange, @First player: Player) {
-        if (event.endResult[Keys.IS_SNEAKING] == true) {
-            val bender: Bender = BenderService.get()[player]
-            val ability: Ability<*> = bender.selectedAbility ?: return
-            bender.execute(ability, AbilityExecutionType.SNEAK)
-        }
+    fun onRegisterPvpProtection(event: GameRegistryEvent.Register<PvpProtection>) {
+        GriefDefenderProtection.load()?.let(event::register)
     }
 }
