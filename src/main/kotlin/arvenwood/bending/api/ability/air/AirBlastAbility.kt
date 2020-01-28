@@ -128,15 +128,16 @@ data class AirBlastAbility(
     }
 
     private suspend fun runSneakMode(context: AbilityContext, player: Player): AbilityResult {
-        val origin: Location<World> = BlockRay.from(player)
-            .distanceLimit(this.selectRange)
-            .skipFilter(BlockRay.onlyAirFilter())
-            .end().get().location
+        val origin: Location<World> = player.getTargetLocation(this.selectRange)
+//        val origin: Location<World> = BlockRay.from(player)
+//            .distanceLimit(this.selectRange)
+//            .skipFilter(BlockRay.onlyAirFilter())
+//            .end().get().location
 
         context[StandardContext.origin] = origin
         context[currentLocation] = origin
 
-        val defer: Deferred<Unit> = BenderService.get()[player].deferExecution(AirBlastAbility, AbilityExecutionType.LEFT_CLICK)
+        val defer: Deferred<Unit> = BenderService.get()[player.uniqueId].deferExecution(AirBlastAbility, AbilityExecutionType.LEFT_CLICK)
         abilityLoopLimited {
             if (player.isRemoved) {
                 return ErrorDied

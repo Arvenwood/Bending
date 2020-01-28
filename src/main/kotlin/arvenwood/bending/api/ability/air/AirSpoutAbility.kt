@@ -66,7 +66,7 @@ data class AirSpoutAbility(
         context[angle] = 0
 
         val startTime: Long = System.currentTimeMillis()
-        val defer: Deferred<Unit> = BenderService.get()[player].deferExecution(AirSpoutAbility, AbilityExecutionType.LEFT_CLICK)
+        val defer: Deferred<Unit> = BenderService.get()[player.uniqueId].deferExecution(AirSpoutAbility, AbilityExecutionType.LEFT_CLICK)
         abilityLoop {
             if (player.isRemoved) {
                 return Success

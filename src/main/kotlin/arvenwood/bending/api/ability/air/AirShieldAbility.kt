@@ -67,7 +67,7 @@ data class AirShieldAbility(
         var radius: Double by context.by(StandardContext.radius, this.initialRadius)
 
         val angles = HashMap<Int, Int>()
-        var angle: Int = 0
+        var angle = 0
         val di: Int = (this.maxRadius * 2 / this.streams).toInt()
         for (i: Int in -this.maxRadius.toInt() + di until this.maxRadius.toInt() step di) {
             angles[i] = angle
