@@ -4,6 +4,7 @@ import arvenwood.bending.api.element.Element
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.CatalogType
 import org.spongepowered.api.event.cause.Cause
+import org.spongepowered.api.text.Text
 import kotlin.coroutines.CoroutineContext
 
 interface AbilityType<out T : Ability<T>> : CatalogType, CoroutineContext.Element {
@@ -11,6 +12,10 @@ interface AbilityType<out T : Ability<T>> : CatalogType, CoroutineContext.Elemen
     override fun getId(): String
 
     override fun getName(): String
+
+    val instructions: Text get() = Text.EMPTY
+
+    val description: Text get() = Text.EMPTY
 
     val element: Element
 
