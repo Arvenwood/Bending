@@ -10,9 +10,13 @@ interface Bender {
 
     var selectedAbility: Ability<*>?
 
+    val equippedAbilities: Map<Int, Ability<*>>
+
     operator fun get(hotbarIndex: Int): Ability<*>?
 
     operator fun set(hotbarIndex: Int, ability: Ability<*>?)
+
+    fun clearEquipped()
 
     val runningAbilities: Collection<AbilityExecution>
 
