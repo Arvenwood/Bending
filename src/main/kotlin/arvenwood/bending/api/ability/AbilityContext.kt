@@ -1,6 +1,6 @@
 package arvenwood.bending.api.ability
 
-import arvenwood.bending.api.ability.simple.SimpleAbilityContext
+import arvenwood.bending.plugin.ability.SimpleAbilityContext
 import org.spongepowered.api.CatalogType
 import kotlin.coroutines.CoroutineContext
 import kotlin.properties.ReadWriteProperty
