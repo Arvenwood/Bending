@@ -44,5 +44,7 @@ object StandardContext {
      */
     object affectedEntities : AbilityContext.Key<MutableCollection<Entity>>("bending:affected_entities", "Affected Entities Context")
 
+    object height : AbilityContext.Key<Double>("bending:height", "Height Context")
+
     object radius : AbilityContext.Key<Double>("bending:radius", "Radius Context")
 }
