@@ -32,7 +32,7 @@ class SimpleCooldownService : CooldownService {
     }
 
     override fun set(player: Player, type: AbilityType<*>, value: Long) {
-        val abilities: MutableMap<AbilityType<*>, Long> = this.playerMap.computeIfAbsent(player.uniqueId) { HashMap() }
+        val abilities: MutableMap<AbilityType<*>, Long> = this.playerMap.computeIfAbsent(player.uniqueId) { IdentityHashMap() }
         abilities[type] = System.currentTimeMillis() + value
     }
 }

@@ -2,7 +2,7 @@ package arvenwood.bending.plugin
 
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.simple.SimpleAbilityContext
+import arvenwood.bending.plugin.ability.SimpleAbilityContext
 import arvenwood.bending.api.service.CooldownService
 import arvenwood.bending.api.util.selectedSlotIndex
 import arvenwood.bending.plugin.ability.SimpleAbilityExecution
@@ -16,16 +16,26 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
 
     private val player: Player get() = Sponge.getServer().getPlayer(this.uniqueId).get()
 
-    private val equipped = HashMap<Int, Ability<*>>()
+    private val equipped: Array<Ability<*>?> = arrayOfNulls(size = 9)
 
     private val running = IdentityHashMap<Job, SimpleAbilityExecution>()
 
-    private val awaiting = IdentityHashMap<AbilityType<*>, MutableMap<AbilityExecutionType, Continuation<Unit>>>()
+    private val awaiting = IdentityHashMap<AbilityType<*>, EnumMap<AbilityExecutionType, Continuation<Unit>>>()
 
     override var selectedAbility: Ability<*>?
         get() = this[this.player.selectedSlotIndex]
         set(value) {
             this[this.player.selectedSlotIndex] = value
+        }
+
+    override val equippedAbilities: Map<Int, Ability<*>>
+        get() {
+            val result = HashMap<Int, Ability<*>>()
+            for (i in this.equipped.indices) {
+                val ability: Ability<*> = this.equipped[i] ?: continue
+                result[i] = ability
+            }
+            return result
         }
 
     override fun get(hotbarIndex: Int): Ability<*>? {
@@ -35,10 +45,16 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
 
     override fun set(hotbarIndex: Int, ability: Ability<*>?) {
         check(hotbarIndex in 0..8) { "Invalid hotbar index: $hotbarIndex" }
-        if (ability == null) {
-            this.equipped.remove(hotbarIndex)
-        } else {
-            this.equipped[hotbarIndex] = ability
+        val old: Ability<*>? = this.equipped[hotbarIndex]
+        if (old != null) {
+
+        }
+        this.equipped[hotbarIndex] = ability
+    }
+
+    override fun clearEquipped() {
+        for (i in 0..8) {
+            this.equipped[i] = null
         }
     }
 
@@ -50,7 +66,7 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
             return
         }
 
-        val cont = this.awaiting[ability.type]?.remove(executionType)
+        val cont: Continuation<Unit>? = this.awaiting[ability.type]?.remove(executionType)
         if (cont != null) {
             // Found a waiting ability.
             cont.resume(Unit)
@@ -85,7 +101,7 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
         lateinit var job: Job
 
         val coroutine: CoroutineContext =
-            Bending.SYNC + ability + context + executionType + CoroutineExceptionHandler(this::cancelAbility)
+            Bending.SYNC + ability + context + executionType + exceptionHandler
 
         job = GlobalScope.launch(coroutine) {
             ability.execute(context, executionType)
@@ -96,6 +112,8 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
 
         this.running[job] = execution
     }
+
+    private val exceptionHandler: CoroutineExceptionHandler = CoroutineExceptionHandler(this::cancelAbility)
 
     private fun cancelAbility(context: CoroutineContext, throwable: Throwable) {
         val ability: Ability<*> = context[Ability] ?: return

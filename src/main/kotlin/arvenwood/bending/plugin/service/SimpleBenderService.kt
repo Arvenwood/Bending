@@ -11,6 +11,6 @@ class SimpleBenderService : BenderService {
 
     private val benders = HashMap<UUID, Bender>()
 
-    override fun get(player: Player): Bender =
-        this.benders.computeIfAbsent(player.uniqueId) { SimpleBender(it) }
+    override fun get(uniqueId: UUID): Bender =
+        this.benders.computeIfAbsent(uniqueId) { SimpleBender(it) }
 }

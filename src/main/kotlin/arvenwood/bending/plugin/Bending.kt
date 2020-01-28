@@ -173,6 +173,7 @@ class Bending @Inject constructor(private val logger: Logger) {
     fun onRegisterAbilityType(event: GameRegistryEvent.Register<AbilityType<*>>) {
         // Register the builtin abilities.
 
+        event.register(AirAgilityAbility)
         event.register(AirBlastAbility)
         event.register(AirJumpAbility)
         event.register(AirShieldAbility)

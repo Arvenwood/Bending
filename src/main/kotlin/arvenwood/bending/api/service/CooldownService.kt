@@ -13,6 +13,13 @@ interface CooldownService {
             Sponge.getServiceManager().provideUnchecked(CooldownService::class.java)
     }
 
+    /**
+     * Checks if a player is on cooldown for a type of ability.
+     *
+     * @param player The player to check
+     * @param type The type of ability to check
+     * @return Whether the type of ability is on cooldown for the given player
+     */
     fun hasCooldown(player: Player, type: AbilityType<Ability<*>>): Boolean
 
     fun removeCooldown(player: Player, type: AbilityType<Ability<*>>): Long
