@@ -13,19 +13,28 @@ repositories {
     mavenCentral()
 
     maven("https://repo.spongepowered.org/maven")
+
+    // GriefDefender
+    maven("https://jitpack.io")
 }
 
 dependencies {
+    // Kotlin
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0")
 
+    // Kotlin shading
     runtime(kotlin("stdlib-jdk8"))
     runtime("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
     runtime("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0")
 
+    // Sponge
     compileOnly("org.spongepowered:spongeapi:7.1.0")
     kapt("org.spongepowered:spongeapi:7.1.0")
+
+    // GriefDefender
+    compileOnly("com.github.bloodmc:GriefDefenderAPI:b956577866")
 }
 
 configure<JavaPluginConvention> {
