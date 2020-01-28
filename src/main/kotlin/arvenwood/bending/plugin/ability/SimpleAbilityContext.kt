@@ -1,4 +1,4 @@
-package arvenwood.bending.api.ability.simple
+package arvenwood.bending.plugin.ability
 
 import arvenwood.bending.api.ability.AbilityContext
 import java.util.*
