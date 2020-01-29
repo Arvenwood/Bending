@@ -4,12 +4,12 @@ import org.spongepowered.api.Sponge
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 
-interface AbilityCollisionService {
+interface CollisionService {
 
     companion object {
         @JvmStatic
-        fun get(): AbilityCollisionService =
-            Sponge.getServiceManager().provideUnchecked(AbilityCollisionService::class.java)
+        fun get(): CollisionService =
+            Sponge.getServiceManager().provideUnchecked(CollisionService::class.java)
     }
 
     fun checkAt(location: Location<World>): Boolean

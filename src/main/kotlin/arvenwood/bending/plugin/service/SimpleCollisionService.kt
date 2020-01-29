@@ -1,10 +1,10 @@
 package arvenwood.bending.plugin.service
 
-import arvenwood.bending.api.service.AbilityCollisionService
+import arvenwood.bending.api.service.CollisionService
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 
-class SimpleAbilityCollisionService : AbilityCollisionService {
+class SimpleCollisionService : CollisionService {
 
     private val map = HashMap<Location<World>, Int>()
 
