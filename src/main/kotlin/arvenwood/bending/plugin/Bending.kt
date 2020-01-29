@@ -31,9 +31,7 @@ import org.spongepowered.api.command.spec.CommandSpec
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.Listener
 import org.spongepowered.api.event.game.GameRegistryEvent
-import org.spongepowered.api.event.game.state.GameInitializationEvent
-import org.spongepowered.api.event.game.state.GamePreInitializationEvent
-import org.spongepowered.api.event.game.state.GameStartingServerEvent
+import org.spongepowered.api.event.game.state.*
 import org.spongepowered.api.plugin.Dependency
 import org.spongepowered.api.plugin.Plugin
 import org.spongepowered.api.text.Text
@@ -60,6 +58,8 @@ class Bending @Inject constructor(private val logger: Logger) {
             private set
     }
 
+    private lateinit var transientBlockService: SimpleTransientBlockService
+
     @Listener
     fun onPreInit(event: GamePreInitializationEvent) {
         ASYNC = Sponge.getScheduler().createAsyncExecutor(this).asCoroutineDispatcher()
@@ -84,15 +84,25 @@ class Bending @Inject constructor(private val logger: Logger) {
     }
 
     @Listener
-    fun onStarting(event: GameStartingServerEvent) {
+    fun onStarting(event: GameAboutToStartServerEvent) {
         this.logger.info("Registering protection services...")
 
         Sponge.getServiceManager().setProvider<BuildProtectionService>(this, SimpleBuildProtectionService())
         Sponge.getServiceManager().setProvider<PvpProtectionService>(this, SimplePvpProtectionService())
     }
 
+    @Listener
+    fun onStarted(event: GameStartedServerEvent) {
+        this.logger.info("Starting tasks...")
+
+        this.transientBlockService.start(this)
+    }
+
     private fun registerServices() {
         this.logger.info("Registering services...")
+
+        this.transientBlockService = SimpleTransientBlockService()
+        Sponge.getServiceManager().setProvider<TransientBlockService>(this, this.transientBlockService)
 
         Sponge.getServiceManager().setProvider<AbilityService>(this, SimpleAbilityService)
         Sponge.getServiceManager().setProvider<BenderService>(this, SimpleBenderService())
@@ -120,7 +130,7 @@ class Bending @Inject constructor(private val logger: Logger) {
 
         val clear: CommandSpec = CommandSpec.builder()
             .permission("bending.user.clear")
-            .executor { src: CommandSource, args: CommandContext ->
+            .executor { src: CommandSource, _: CommandContext ->
                 if (src !is Player) throw CommandException(Text.of("You must be a player to run this command!"))
 
                 BenderService.get()[src.uniqueId].clearEquipped()
@@ -151,6 +161,7 @@ class Bending @Inject constructor(private val logger: Logger) {
             .build()
 
         val bending: CommandSpec = CommandSpec.builder()
+            .permission("bending.base")
             .child(bind, "bind", "b")
             .child(clear, "clear")
             .child(copy, "copy")
@@ -189,11 +200,13 @@ class Bending @Inject constructor(private val logger: Logger) {
 
     @Listener
     fun onRegisterBuildProtection(event: GameRegistryEvent.Register<BuildProtection>) {
+        // Register GriefDefender protection if found.
         GriefDefenderProtection.load()?.let(event::register)
     }
 
     @Listener
     fun onRegisterPvpProtection(event: GameRegistryEvent.Register<PvpProtection>) {
+        // Register GriefDefender protection if found.
         GriefDefenderProtection.load()?.let(event::register)
     }
 }
