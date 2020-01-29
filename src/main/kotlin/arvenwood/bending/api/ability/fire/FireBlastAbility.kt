@@ -42,7 +42,7 @@ data class FireBlastAbility(
 
     companion object : AbstractAbilityType<FireBlastAbility>(
         element = Elements.Fire,
-        executionTypes = setOf(AbilityExecutionType.LEFT_CLICK),
+        executionTypes = enumSetOf(AbilityExecutionType.LEFT_CLICK),
         id = "bending:fire_blast",
         name = "FireBlast"
     ) {
@@ -96,7 +96,7 @@ data class FireBlastAbility(
         val origin: Location<World> = context.require(origin)
         val direction: Vector3d = context.require(direction)
 
-        abilityLoop(MAX_TICKS) {
+        abilityLoop {
             if (player.isRemoved) {
                 // Stop if this Player object is stale.
                 return AbilityResult.ErrorDied

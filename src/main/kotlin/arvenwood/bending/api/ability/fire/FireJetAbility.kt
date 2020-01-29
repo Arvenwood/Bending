@@ -4,7 +4,7 @@ import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
-import arvenwood.bending.api.ability.abilityLoop
+import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.headDirection
 import arvenwood.bending.api.util.isWater
 import arvenwood.bending.api.util.spawnParticles
@@ -29,7 +29,7 @@ data class FireJetAbility(
 
     companion object : AbstractAbilityType<FireJetAbility>(
         element = Elements.Fire,
-        executionTypes = setOf(AbilityExecutionType.LEFT_CLICK),
+        executionTypes = enumSetOf(AbilityExecutionType.LEFT_CLICK),
         id = "bending:fire_jet",
         name = "FireJet"
     ) {
@@ -51,7 +51,7 @@ data class FireJetAbility(
         val player: Player = context[player] ?: return ErrorNoTarget
 
         val startTime: Long = System.currentTimeMillis()
-        abilityLoop {
+        abilityLoopUnsafe {
             if (player.isRemoved) {
                 // Stop if this Player object is stale.
                 return ErrorDied

@@ -4,7 +4,6 @@ import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
-import arvenwood.bending.api.service.CooldownService
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
 import com.flowpowered.math.vector.Vector3d
@@ -38,7 +37,7 @@ data class AirShieldAbility(
 
     companion object : AbstractAbilityType<AirShieldAbility>(
         element = Elements.Air,
-        executionTypes = setOf(AbilityExecutionType.SNEAK),
+        executionTypes = enumSetOf(AbilityExecutionType.SNEAK),
         id = "bending:air_shield",
         name = "AirShield"
     ) {
@@ -75,7 +74,7 @@ data class AirShieldAbility(
             if (angle == 360) angle = 0
         }
 
-        abilityLoop {
+        abilityLoopUnsafe {
             if (player.eyeLocation.blockType.isLiquid()) {
                 return ErrorUnderWater
             } else if (!player.getOrElse(Keys.IS_SNEAKING, false)) {

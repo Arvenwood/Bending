@@ -10,16 +10,15 @@ import arvenwood.bending.api.ability.StandardContext.origin
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.BenderService
+import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
 import com.flowpowered.math.vector.Vector3d
 import kotlinx.coroutines.Deferred
 import ninja.leaping.configurate.ConfigurationNode
-import org.spongepowered.api.block.BlockType
 import org.spongepowered.api.block.BlockTypes
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.effect.particle.ParticleEffect
-import org.spongepowered.api.effect.particle.ParticleType
 import org.spongepowered.api.effect.particle.ParticleTypes
 import org.spongepowered.api.effect.sound.SoundType
 import org.spongepowered.api.effect.sound.SoundTypes
@@ -27,7 +26,6 @@ import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.Living
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.cause.entity.damage.source.DamageSources
-import org.spongepowered.api.util.blockray.BlockRay
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 import kotlin.math.absoluteValue
@@ -47,8 +45,6 @@ data class AirBlastAbility(
     val canPressButtons: Boolean,
     val canCoolLava: Boolean,
     val numParticles: Int,
-    val showParticles: Boolean,
-    val particleType: ParticleType,
     val selectRange: Double
 ) : Ability<AirBlastAbility> {
 
@@ -56,7 +52,7 @@ data class AirBlastAbility(
 
     companion object : AbstractAbilityType<AirBlastAbility>(
         element = Elements.Air,
-        executionTypes = setOf(AbilityExecutionType.LEFT_CLICK, AbilityExecutionType.SNEAK),
+        executionTypes = enumSetOf(AbilityExecutionType.LEFT_CLICK, AbilityExecutionType.SNEAK),
         id = "bending:air_blast",
         name = "AirBlast"
     ) {
@@ -73,8 +69,6 @@ data class AirBlastAbility(
             canPressButtons = true,
             canCoolLava = true,
             numParticles = 6,
-            showParticles = true,
-            particleType = ParticleTypes.CLOUD,
             selectRange = 10.0
         )
 
@@ -86,28 +80,15 @@ data class AirBlastAbility(
         internal val EXTINGUISH_EFFECT: ParticleEffect = ParticleEffect.builder().type(ParticleTypes.FIRE_SMOKE).build()
 
         @JvmStatic
-        private val DOORS: Set<BlockType> =
-            setOf(
-                BlockTypes.ACACIA_DOOR, BlockTypes.BIRCH_DOOR, BlockTypes.DARK_OAK_DOOR, BlockTypes.IRON_DOOR,
-                BlockTypes.JUNGLE_DOOR, BlockTypes.SPRUCE_DOOR, BlockTypes.WOODEN_DOOR,
-                BlockTypes.IRON_TRAPDOOR, BlockTypes.TRAPDOOR
-            )
-
-        @JvmStatic
         private fun doorSound(open: Boolean): SoundType =
             if (open) SoundTypes.BLOCK_WOODEN_DOOR_OPEN else SoundTypes.BLOCK_WOODEN_DOOR_CLOSE
+
+        private val PARTICLE_OFFSET = Vector3d(0.275, 0.275, 0.275)
     }
 
     private val speedFactor: Double = this.speed * (50 / 1000.0)
 
     private val random: Random = java.util.Random().asKotlinRandom()
-
-    private val particleEffect: ParticleEffect =
-        ParticleEffect.builder()
-            .type(this.particleType)
-            .quantity(this.numParticles)
-            .offset(Vector3d(0.275, 0.275, 0.275))
-            .build()
 
     override fun prepare(player: Player, context: AbilityContext) {
         context[affectedLocations] = HashSet()
@@ -129,16 +110,12 @@ data class AirBlastAbility(
 
     private suspend fun runSneakMode(context: AbilityContext, player: Player): AbilityResult {
         val origin: Location<World> = player.getTargetLocation(this.selectRange)
-//        val origin: Location<World> = BlockRay.from(player)
-//            .distanceLimit(this.selectRange)
-//            .skipFilter(BlockRay.onlyAirFilter())
-//            .end().get().location
 
         context[StandardContext.origin] = origin
         context[currentLocation] = origin
 
         val defer: Deferred<Unit> = BenderService.get()[player.uniqueId].deferExecution(AirBlastAbility, AbilityExecutionType.LEFT_CLICK)
-        abilityLoopLimited {
+        abilityLoop {
             if (player.isRemoved) {
                 return ErrorDied
             }
@@ -146,13 +123,7 @@ data class AirBlastAbility(
                 return Success
             }
 
-            val particle: ParticleEffect = ParticleEffect.builder()
-                .type(ParticleTypes.CLOUD)
-                .quantity(4)
-                .offset(Vector3d(Math.random(), Math.random(), Math.random()))
-                .build()
-
-            origin.spawnParticles(particle)
+            origin.spawnParticles(EffectService.get().createRandomParticle(Elements.Air, 4))
 
             if (defer.isCompleted) {
                 context[direction] = player.headDirection.normalize()
@@ -169,8 +140,10 @@ data class AirBlastAbility(
 
         var location: Location<World> by context.by(currentLocation)
         val affected: MutableCollection<Location<World>> by context.by(affectedLocations)
+        val origin: Location<World> = context.require(origin)
+        val direction: Vector3d = context.require(direction)
 
-        abilityLoopLimited {
+        abilityLoop {
             if (player.isRemoved) {
                 // Stop if this Player object is stale.
                 return ErrorDied
@@ -194,7 +167,7 @@ data class AirBlastAbility(
                     continue
                 }
 
-                if (test.blockType in DOORS) {
+                if (test.blockType in AirConstants.DOORS) {
                     // Open/Close doors.
                     val open: Boolean = test.get(Keys.OPEN).orElse(false)
                     test.offer(Keys.OPEN, !open)
@@ -219,7 +192,7 @@ data class AirBlastAbility(
                 return Success
             }
 
-            val distance: Double = location.distanceSquared(context.require(origin))
+            val distance: Double = location.distanceSquared(origin)
             if (distance > this.range * this.range) {
                 // Reached our limit!
                 return Success
@@ -235,34 +208,24 @@ data class AirBlastAbility(
                 affect(context, entity, fromAlternate)
             }
 
-            // Move to the next position.
-            location = advanceLocation(location, context.require(direction)) ?: return Success
+            // Show the particles.
+            location.spawnParticles(EffectService.get().createParticle(Elements.Air, this.numParticles, PARTICLE_OFFSET))
+
+            if (this.random.nextInt(4) == 0) {
+                // Play the sounds every now and then.
+                location.extent.playSound(SoundTypes.ENTITY_CREEPER_HURT, location.position, 0.5, 1.0)
+            }
+
+            if (location.isNearDiagonalWall(direction)) {
+                // Stop if we've hit a diagonal wall.
+                return Success
+            }
+
+            // Move forward.
+            location = location.add(direction.mul(this.speedFactor))
         }
 
         return Success
-    }
-
-    /**
-     * Calculate the next location to blast.
-     *
-     * @return The next location, or null if a wall is hit.
-     */
-    private fun advanceLocation(location: Location<World>, direction: Vector3d): Location<World>? {
-        if (this.showParticles) {
-            // Show the particles.
-            location.extent.spawnParticles(this.particleEffect, location.position)
-        }
-        if (this.random.nextInt(4) == 0) {
-            // Play the sounds every now and then.
-            location.extent.playSound(SoundTypes.ENTITY_CREEPER_HURT, location.position, 0.5, 1.0)
-        }
-        if (location.isNearDiagonalWall(direction)) {
-            // Stop if we've hit a diagonal wall.
-            return null
-        }
-
-        // Move forward.
-        return location.add(direction.mul(this.speedFactor))
     }
 
     /**

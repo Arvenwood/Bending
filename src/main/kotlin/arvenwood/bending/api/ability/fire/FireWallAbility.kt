@@ -40,7 +40,7 @@ data class FireWallAbility(
 
     companion object : AbstractAbilityType<FireWallAbility>(
         element = Elements.Fire,
-        executionTypes = setOf(AbilityExecutionType.LEFT_CLICK),
+        executionTypes = enumSetOf(AbilityExecutionType.LEFT_CLICK),
         id = "bending:fire_wall",
         name = "FireWall"
     ) {
@@ -77,7 +77,7 @@ data class FireWallAbility(
         val origin: Location<World> = context.require(origin)
         val locations: List<Location<World>> = calculateLocations(player, origin, context.require(direction))
 
-        abilityLoop {
+        abilityLoopUnsafe {
             val curTime = System.currentTimeMillis()
 
             if (startTime + this.duration <= curTime) {

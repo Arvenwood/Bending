@@ -4,6 +4,7 @@ import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.headDirection
 import arvenwood.bending.api.util.spawnParticles
 import com.flowpowered.math.vector.Vector3d
@@ -22,7 +23,7 @@ data class AirJumpAbility(
 
     companion object : AbstractAbilityType<AirJumpAbility>(
         element = Elements.Air,
-        executionTypes = setOf(AbilityExecutionType.SNEAK),
+        executionTypes = enumSetOf(AbilityExecutionType.SNEAK),
         id = "bending:air_jump",
         name = "AirJump"
     ) {

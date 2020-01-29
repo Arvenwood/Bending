@@ -4,6 +4,7 @@ import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.util.enumSetOf
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.effect.potion.PotionEffect
@@ -21,7 +22,7 @@ data class AirAgilityAbility(
 
     companion object : AbstractAbilityType<AirAgilityAbility>(
         element = Elements.Air,
-        executionTypes = setOf(AbilityExecutionType.LEFT_CLICK),
+        executionTypes = enumSetOf(AbilityExecutionType.LEFT_CLICK),
         id = "bending:air_ability",
         name = "AirAgility"
     ) {
@@ -56,7 +57,7 @@ data class AirAgilityAbility(
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context[StandardContext.player] ?: return ErrorNoTarget
 
-        abilityLoop {
+        abilityLoopUnsafe {
             if (player.isRemoved) return Success
             if (!player.getOrElse(Keys.IS_SPRINTING, false)) return Success
 

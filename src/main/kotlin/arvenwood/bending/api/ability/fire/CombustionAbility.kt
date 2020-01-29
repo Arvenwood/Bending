@@ -1,7 +1,8 @@
 package arvenwood.bending.api.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityResult.*
+import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
+import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
@@ -32,7 +33,7 @@ data class CombustionAbility(
 
     companion object : AbstractAbilityType<CombustionAbility>(
         element = Elements.Fire,
-        executionTypes = setOf(AbilityExecutionType.SNEAK),
+        executionTypes = enumSetOf(AbilityExecutionType.SNEAK),
         id = "bending:combustion",
         name = "Combustion"
     ) {
@@ -49,8 +50,6 @@ data class CombustionAbility(
         override fun load(node: ConfigurationNode): CombustionAbility {
             TODO()
         }
-
-        private const val MAX_TICKS: Int = 10000
     }
 
     private val speedFactor: Double = this.speed * (50 / 1000.0)
@@ -74,7 +73,7 @@ data class CombustionAbility(
         val direction: Vector3d = context.require(StandardContext.direction)
         val origin: Location<World> = context.require(StandardContext.origin)
 
-        abilityLoop(MAX_TICKS) {
+        abilityLoop {
             if (location.distanceSquared(origin) > this.rangeSquared) {
                 return Success
             }

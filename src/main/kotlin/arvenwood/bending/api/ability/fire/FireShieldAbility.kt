@@ -5,7 +5,10 @@ import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.ProtectionService
-import arvenwood.bending.api.util.*
+import arvenwood.bending.api.util.enumSetOf
+import arvenwood.bending.api.util.getNearbyEntities
+import arvenwood.bending.api.util.getNearbyLocations
+import arvenwood.bending.api.util.spawnParticles
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.block.BlockTypes
@@ -35,7 +38,7 @@ data class FireShieldAbility(
 
     companion object : AbstractAbilityType<FireShieldAbility>(
         element = Elements.Fire,
-        executionTypes = setOf(AbilityExecutionType.SNEAK),
+        executionTypes = enumSetOf(AbilityExecutionType.SNEAK),
         id = "bending:fire_shield",
         name = "FireShield"
     ) {
@@ -70,7 +73,7 @@ data class FireShieldAbility(
 
         var increment = 20
         val startTime: Long = System.currentTimeMillis()
-        abilityLoop {
+        abilityLoopUnsafe {
             if (!player.getOrElse(Keys.IS_SNEAKING, false)) {
                 return Success
             }

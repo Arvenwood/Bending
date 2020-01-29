@@ -9,6 +9,21 @@ fun <K, V> identityHashMapOf(vararg pairs: Pair<K, V>): IdentityHashMap<K, V> =
 fun <E> identityHashSetOf(vararg values: E): MutableSet<E> =
     Sets.newIdentityHashSet<E>().apply { addAll(values) }
 
+fun <E : Enum<E>> enumSetOf(e: E) : MutableSet<E> =
+    EnumSet.of(e)
+
+fun <E : Enum<E>> enumSetOf(e1: E, e2: E) : MutableSet<E> =
+    EnumSet.of(e1, e2)
+
+fun <E : Enum<E>> enumSetOf(e1: E, e2: E, e3: E) : MutableSet<E> =
+    EnumSet.of(e1, e2, e3)
+
+fun <E : Enum<E>> enumSetOf(e1: E, e2: E, e3: E, e4: E) : MutableSet<E> =
+    EnumSet.of(e1, e2, e3, e4)
+
+fun <E : Enum<E>> enumSetOf(e1: E, e2: E, e3: E, e4: E, e5: E) : MutableSet<E> =
+    EnumSet.of(e1, e2, e3, e4, e5)
+
 private const val INT_MAX_POWER_OF_TWO: Int = Int.MAX_VALUE / 2 + 1
 
 internal fun mapCapacity(expectedSize: Int): Int {

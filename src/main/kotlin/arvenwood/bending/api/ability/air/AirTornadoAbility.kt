@@ -38,7 +38,7 @@ data class AirTornadoAbility(
 
     companion object : AbstractAbilityType<AirTornadoAbility>(
         element = Elements.Air,
-        executionTypes = setOf(AbilityExecutionType.SNEAK),
+        executionTypes = enumSetOf(AbilityExecutionType.SNEAK),
         id = "bending:air_tornado",
         name = "AirTornado"
     ) {
@@ -67,7 +67,7 @@ data class AirTornadoAbility(
         val angles: MutableMap<Int, Int> = createAngleMap()
 
         val startTime: Long = System.currentTimeMillis()
-        abilityLoop {
+        abilityLoopUnsafe {
             if (!player.getOrElse(Keys.IS_SNEAKING, false)) return Success
             if (player.eyeLocation.blockType.isLiquid()) return Success
             if (this.duration > 0 && startTime + this.duration <= System.currentTimeMillis()) return Success
