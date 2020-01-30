@@ -35,6 +35,9 @@ dependencies {
 
     // GriefDefender
     compileOnly("com.github.bloodmc:GriefDefenderAPI:b956577866")
+
+    // PlaceholderAPI
+    compileOnly("com.github.ronaldburns:PlaceholderAPI:4.5.1")
 }
 
 configure<JavaPluginConvention> {
