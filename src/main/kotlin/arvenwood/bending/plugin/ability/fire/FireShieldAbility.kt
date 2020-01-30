@@ -1,4 +1,4 @@
-package arvenwood.bending.api.ability.fire
+package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityResult.Success

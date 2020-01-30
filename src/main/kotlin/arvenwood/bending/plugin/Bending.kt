@@ -2,8 +2,8 @@ package arvenwood.bending.plugin
 
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.AbilityType
-import arvenwood.bending.api.ability.air.*
-import arvenwood.bending.api.ability.fire.*
+import arvenwood.bending.plugin.ability.air.*
+import arvenwood.bending.plugin.ability.fire.*
 import arvenwood.bending.api.element.Element
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.protection.BuildProtection
@@ -20,7 +20,6 @@ import arvenwood.bending.plugin.registry.HashMapCatalogRegistryModule
 import arvenwood.bending.plugin.service.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
-import me.rojo8399.placeholderapi.ExpansionBuilder
 import me.rojo8399.placeholderapi.PlaceholderService
 import org.slf4j.Logger
 import org.spongepowered.api.Sponge

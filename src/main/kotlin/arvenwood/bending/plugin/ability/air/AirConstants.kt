@@ -1,4 +1,4 @@
-package arvenwood.bending.api.ability.air
+package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.util.identityHashSetOf
 import org.spongepowered.api.block.BlockType

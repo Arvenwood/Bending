@@ -1,4 +1,4 @@
-package arvenwood.bending.api.ability.air
+package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
