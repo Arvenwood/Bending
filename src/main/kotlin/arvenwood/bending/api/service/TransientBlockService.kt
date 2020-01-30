@@ -2,6 +2,7 @@ package arvenwood.bending.api.service
 
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.block.BlockState
+import org.spongepowered.api.block.BlockType
 import org.spongepowered.api.util.ResettableBuilder
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
@@ -56,3 +57,6 @@ interface TransientBlockService {
         }
     }
 }
+
+fun TransientBlockService.Snapshot.Builder.newState(type: BlockType): TransientBlockService.Snapshot.Builder =
+    this.newState(BlockState.builder().blockType(type).build())
