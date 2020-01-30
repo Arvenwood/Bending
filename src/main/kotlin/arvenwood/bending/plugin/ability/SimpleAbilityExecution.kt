@@ -7,7 +7,7 @@ data class SimpleAbilityExecution(val job: Job) : AbilityExecution {
 
     override val ability: Ability<*> get() = this.job[Ability]!!
 
-    override val type: AbilityType<*> get() = this.job[AbilityType]!!
+    override val type: AbilityType<*> get() = ability.type
 
     override val context: AbilityContext get() = this.job[AbilityContext]!!
 

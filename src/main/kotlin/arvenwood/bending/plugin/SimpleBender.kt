@@ -6,6 +6,8 @@ import arvenwood.bending.plugin.ability.SimpleAbilityContext
 import arvenwood.bending.api.service.CooldownService
 import arvenwood.bending.api.util.selectedSlotIndex
 import arvenwood.bending.plugin.ability.SimpleAbilityExecution
+import com.google.common.collect.Table
+import com.google.common.collect.Tables
 import kotlinx.coroutines.*
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.entity.living.player.Player
@@ -18,9 +20,12 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
 
     private val equipped: Array<Ability<*>?> = arrayOfNulls(size = 9)
 
-    private val running = IdentityHashMap<Job, SimpleAbilityExecution>()
+    private val runningMap = IdentityHashMap<Job, SimpleAbilityExecution>()
 
-    private val awaiting = IdentityHashMap<AbilityType<*>, EnumMap<AbilityExecutionType, Continuation<Unit>>>()
+    private val awaitingMap: Table<AbilityType<*>, AbilityExecutionType, Continuation<Unit>> =
+        Tables.newCustomTable<AbilityType<*>, AbilityExecutionType, Continuation<Unit>>(IdentityHashMap()) {
+            EnumMap(AbilityExecutionType::class.java)
+        }
 
     override var selectedAbility: Ability<*>?
         get() = this[this.player.selectedSlotIndex]
@@ -58,7 +63,9 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
         }
     }
 
-    override val runningAbilities: Collection<AbilityExecution> get() = running.values
+    override val runningAbilities: Collection<AbilityExecution> get() = runningMap.values
+
+    private val exceptionHandler: CoroutineExceptionHandler = CoroutineExceptionHandler(this::cancelAbility)
 
     override fun execute(ability: Ability<*>, executionType: AbilityExecutionType) {
         if (executionType !in ability.type.executionTypes) {
@@ -66,7 +73,7 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
             return
         }
 
-        val cont: Continuation<Unit>? = this.awaiting[ability.type]?.remove(executionType)
+        val cont: Continuation<Unit>? = this.awaitingMap.remove(ability.type, executionType)
         if (cont != null) {
             // Found a waiting ability.
             cont.resume(Unit)
@@ -87,10 +94,12 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
         context[StandardContext.player] = this.player
         ability.prepare(this.player, context)
 
-        if (!ability.shouldExecute(context)) {
+        if (!ability.validate(context)) {
             // Should we try to run the ability?
             return
         }
+
+        ability.preempt(context, executionType)
 
         if (ability.cooldown > 0) {
             // Set the cooldown. Don't spam your abilities!
@@ -106,14 +115,12 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
         job = GlobalScope.launch(coroutine) {
             ability.execute(context, executionType)
             ability.cleanup(context)
-            this@SimpleBender.running.remove(job)
+            this@SimpleBender.runningMap.remove(job)
         }
         execution = SimpleAbilityExecution(job)
 
-        this.running[job] = execution
+        this.runningMap[job] = execution
     }
-
-    private val exceptionHandler: CoroutineExceptionHandler = CoroutineExceptionHandler(this::cancelAbility)
 
     private fun cancelAbility(context: CoroutineContext, throwable: Throwable) {
         val ability: Ability<*> = context[Ability] ?: return
@@ -122,21 +129,42 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
         ability.cleanup(abilityContext)
 
         val job: Job = context[Job]!!
-        this.running.remove(job)
+        this.runningMap.remove(job)
     }
 
     override suspend fun awaitExecution(type: AbilityType<*>, executionType: AbilityExecutionType): Unit =
         suspendCoroutine {
-            val byExecution: MutableMap<AbilityExecutionType, Continuation<Unit>> =
-                this.awaiting.computeIfAbsent(type) { EnumMap(AbilityExecutionType::class.java) }
-
-            val old: Continuation<Unit>? = byExecution.put(executionType, it)
-
-            old?.resumeWithException(CancellationException())
+            val old: Continuation<Unit>? = this.awaitingMap.put(type, executionType, it)
+            old?.resumeWithException(CancellationException("Waiting ability cancelled"))
         }
 
-    override fun deferExecution(type: AbilityType<*>, executionType: AbilityExecutionType): Deferred<Unit> =
-        GlobalScope.async(Bending.SYNC) {
+    private val waitingExceptionHandler: CoroutineExceptionHandler = CoroutineExceptionHandler(this::cancelWaiting)
+
+    override fun deferExecution(type: AbilityType<*>, executionType: AbilityExecutionType): Job =
+        GlobalScope.launch(Bending.SYNC + type + executionType + waitingExceptionHandler) {
             awaitExecution(type, executionType)
         }
+
+    private fun cancelWaiting(context: CoroutineContext, throwable: Throwable) {
+        val ability: Ability<*> = context[Ability] ?: return
+        val executionType: AbilityExecutionType = context[AbilityExecutionType] ?: return
+        this.awaitingMap.remove(ability, executionType)?.resumeWithException(CancellationException("Waiting ability cancelled"))
+    }
+
+    override fun cancel(type: AbilityType<*>): Boolean {
+        var found = false
+
+        val iter = this.runningMap.iterator()
+        while (iter.hasNext()) {
+            val (_, execution) = iter.next()
+
+            if (type === execution.type) {
+                iter.remove()
+                execution.cancel()
+                found = true
+            }
+        }
+
+        return found
+    }
 }

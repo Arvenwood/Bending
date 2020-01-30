@@ -10,7 +10,7 @@ import kotlin.coroutines.CoroutineContext
 
 @UseExperimental(InternalCoroutinesApi::class, ExperimentalCoroutinesApi::class)
 class SpongeDispatcher(
-    private val plugin: PluginContainer,
+    private val plugin: Any,
     private val async: Boolean
 ) : CoroutineDispatcher(), Delay {
 

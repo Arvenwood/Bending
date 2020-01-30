@@ -18,6 +18,8 @@ import arvenwood.bending.plugin.protection.SimpleBuildProtectionService
 import arvenwood.bending.plugin.protection.SimplePvpProtectionService
 import arvenwood.bending.plugin.registry.HashMapCatalogRegistryModule
 import arvenwood.bending.plugin.service.*
+import com.griefdefender.api.GriefDefender
+import com.griefdefender.api.permission.flag.Flags
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import me.rojo8399.placeholderapi.PlaceholderService
@@ -194,7 +196,7 @@ class Bending @Inject constructor(private val logger: Logger) {
         event.register(Elements.Fire)
         event.register(Elements.Air)
     }
-    
+
     @Listener
     fun onRegisterAbilityType(event: GameRegistryEvent.Register<AbilityType<*>>) {
         // Register the builtin abilities.
@@ -216,12 +218,25 @@ class Bending @Inject constructor(private val logger: Logger) {
     @Listener
     fun onRegisterBuildProtection(event: GameRegistryEvent.Register<BuildProtection>) {
         // Register GriefDefender protection if found.
-        GriefDefenderProtection.load()?.let(event::register)
+        val griefdefender = GriefDefenderProtection.load()
+        if (griefdefender != null) {
+            if (GriefDefender.getCore().isProtectionModuleEnabled(Flags.BLOCK_PLACE)
+                && GriefDefender.getCore().isProtectionModuleEnabled(Flags.BLOCK_BREAK)) {
+                this.logger.info("GriefDefender found. Enabling build protection...")
+                event.register(griefdefender)
+            }
+        }
     }
 
     @Listener
     fun onRegisterPvpProtection(event: GameRegistryEvent.Register<PvpProtection>) {
         // Register GriefDefender protection if found.
-        GriefDefenderProtection.load()?.let(event::register)
+        val griefDefender = GriefDefenderProtection.load()
+        if (griefDefender != null) {
+            if (GriefDefender.getCore().isProtectionModuleEnabled(Flags.ENTITY_DAMAGE)) {
+                this.logger.info("GriefDefender found. Enabling pvp protection...")
+                event.register(griefDefender)
+            }
+        }
     }
 }

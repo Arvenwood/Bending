@@ -9,12 +9,15 @@ import arvenwood.bending.api.ability.StandardContext.direction
 import arvenwood.bending.api.ability.StandardContext.origin
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.protection.BuildProtectionService
+import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
 import com.flowpowered.math.vector.Vector3d
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.block.BlockTypes
 import org.spongepowered.api.data.key.Keys
@@ -114,12 +117,14 @@ data class AirBlastAbility(
         context[StandardContext.origin] = origin
         context[currentLocation] = origin
 
-        val defer: Deferred<Unit> = BenderService.get()[player.uniqueId].deferExecution(AirBlastAbility, AbilityExecutionType.LEFT_CLICK)
+        val defer: Job = BenderService.get()[player.uniqueId].deferExecution(AirBlastAbility, AbilityExecutionType.LEFT_CLICK)
         abilityLoop {
             if (player.isRemoved) {
+                defer.cancel()
                 return ErrorDied
             }
             if (origin.distanceSquared(player.eyeLocation) > this.selectRange * this.selectRange) {
+                defer.cancel()
                 return Success
             }
 
@@ -150,7 +155,7 @@ data class AirBlastAbility(
             }
 
             for (test: Location<World> in location.getNearbyLocations(radius)) {
-                if (ProtectionService.get().isProtected(player, test)) {
+                if (BuildProtectionService.get().isProtected(player, test)) {
                     // Can't fight here!
                     continue
                 }
@@ -199,7 +204,7 @@ data class AirBlastAbility(
             }
 
             for (entity: Entity in location.getNearbyEntities(radius)) {
-                if (ProtectionService.get().isProtected(player, entity.location)) {
+                if (PvpProtectionService.get().isProtected(player, entity)) {
                     // Can't fight here!
                     continue
                 }

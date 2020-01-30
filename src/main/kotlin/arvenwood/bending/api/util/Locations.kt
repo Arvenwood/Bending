@@ -72,3 +72,6 @@ fun Location<World>.digBlock(profile: GameProfile): Boolean =
 
 fun Location<World>.digBlockWith(itemStack: ItemStack, profile: GameProfile): Boolean =
     this.extent.digBlockWith(this.blockPosition, itemStack, profile)
+
+fun Location<World>.add(x: Int, y: Int, z: Int): Location<World> =
+    this.add(x.toDouble(), y.toDouble(), z.toDouble())

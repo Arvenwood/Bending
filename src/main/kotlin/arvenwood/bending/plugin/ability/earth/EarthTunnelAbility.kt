@@ -55,6 +55,12 @@ data class EarthTunnelAbility(
         context[StandardContext.currentLocation] = player.eyeLocation
     }
 
+    override fun validate(context: AbilityContext): Boolean {
+        val player: Player = context[StandardContext.player] ?: return false
+        val location: Location<World> = context[StandardContext.currentLocation] ?: return false
+        return !BuildProtectionService.get().isProtected(player, location)
+    }
+
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context.require(StandardContext.player)
         val origin: Location<World> = context.require(StandardContext.origin)

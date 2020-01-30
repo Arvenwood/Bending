@@ -5,6 +5,7 @@ import arvenwood.bending.api.ability.AbilityExecution
 import arvenwood.bending.api.ability.AbilityExecutionType
 import arvenwood.bending.api.ability.AbilityType
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 
 interface Bender {
 
@@ -24,5 +25,7 @@ interface Bender {
 
     suspend fun awaitExecution(type: AbilityType<*>, executionType: AbilityExecutionType)
 
-    fun deferExecution(type: AbilityType<*>, executionType: AbilityExecutionType): Deferred<Unit>
+    fun deferExecution(type: AbilityType<*>, executionType: AbilityExecutionType): Job
+
+    fun cancel(type: AbilityType<*>): Boolean
 }

@@ -61,7 +61,7 @@ data class CombustionAbility(
         context[StandardContext.currentLocation] = player.eyeLocation
     }
 
-    override fun shouldExecute(context: AbilityContext): Boolean {
+    override fun validate(context: AbilityContext): Boolean {
         val player = context.require(StandardContext.player)
         return !ProtectionService.get().isProtected(player, player.location)
     }

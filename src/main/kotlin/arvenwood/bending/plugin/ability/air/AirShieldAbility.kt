@@ -4,6 +4,7 @@ import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
 import com.flowpowered.math.vector.Vector3d
@@ -94,7 +95,7 @@ data class AirShieldAbility(
         var radius: Double by context.by(StandardContext.radius)
 
         for (entity: Entity in origin.getNearbyEntities(radius)) {
-            if (ProtectionService.get().isProtected(player, entity.location)) continue
+            if (PvpProtectionService.get().isProtected(player, entity)) continue
 
             if (origin.distanceSquared(entity.location) > 4) {
                 val angle: Double = Math.toRadians(50.0)

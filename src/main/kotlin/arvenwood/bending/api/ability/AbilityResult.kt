@@ -27,4 +27,8 @@ sealed class AbilityResult {
     object ErrorProtected : Error() {
         override fun toString(): String = "ErrorProtected"
     }
+
+    object ErrorOutOfRange : Error() {
+        override fun toString(): String = "ErrorOutOfRange"
+    }
 }
