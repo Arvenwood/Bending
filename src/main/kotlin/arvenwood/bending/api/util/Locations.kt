@@ -3,6 +3,8 @@ package arvenwood.bending.api.util
 import com.flowpowered.math.vector.Vector3d
 import org.spongepowered.api.effect.particle.ParticleEffect
 import org.spongepowered.api.entity.Entity
+import org.spongepowered.api.item.inventory.ItemStack
+import org.spongepowered.api.profile.GameProfile
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 
@@ -64,3 +66,9 @@ fun Location<World>.spawnParticles(particleEffect: ParticleEffect) =
 
 fun Location<World>.spawnParticles(particleEffect: ParticleEffect, radius: Int) =
     this.extent.spawnParticles(particleEffect, this.position, radius)
+
+fun Location<World>.digBlock(profile: GameProfile): Boolean =
+    this.extent.digBlock(this.blockPosition, profile)
+
+fun Location<World>.digBlockWith(itemStack: ItemStack, profile: GameProfile): Boolean =
+    this.extent.digBlockWith(this.blockPosition, itemStack, profile)

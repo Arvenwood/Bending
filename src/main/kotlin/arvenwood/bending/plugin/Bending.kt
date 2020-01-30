@@ -20,6 +20,8 @@ import arvenwood.bending.plugin.registry.HashMapCatalogRegistryModule
 import arvenwood.bending.plugin.service.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
+import me.rojo8399.placeholderapi.ExpansionBuilder
+import me.rojo8399.placeholderapi.PlaceholderService
 import org.slf4j.Logger
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.command.CommandException
@@ -42,7 +44,8 @@ import javax.inject.Inject
 @Plugin(
     id = "bending", name = "Bending", version = "0.1.0",
     dependencies = [
-        Dependency(id = "griefdefender", version = "[1.2.4,)", optional = true)
+        Dependency(id = "griefdefender", version = "[1.2.4,)", optional = true),
+        Dependency(id = "placeholderapi", version = "[4.5.1,)", optional = true)
     ],
     description = "Avatar: The Last Airbender in Minecraft!",
     url = "https://ore.spongepowered.org/doot/Bending",
@@ -81,6 +84,19 @@ class Bending @Inject constructor(private val logger: Logger) {
         this.logger.info("Registering listeners...")
 
         Sponge.getEventManager().registerListeners(this, BendingListener())
+    }
+
+    @Listener
+    fun onPostInit(event: GamePostInitializationEvent) {
+        registerPlaceholders()
+    }
+
+    private fun registerPlaceholders() {
+        if (!Sponge.getPluginManager().isLoaded("placeholderapi")) return
+
+        this.logger.info("PlaceholderAPI found. Registering placeholders...")
+
+        val service: PlaceholderService = Sponge.getServiceManager().provide(PlaceholderService::class.java).orElse(null) ?: return
     }
 
     @Listener
