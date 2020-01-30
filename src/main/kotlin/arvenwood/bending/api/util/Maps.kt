@@ -24,6 +24,9 @@ fun <E : Enum<E>> enumSetOf(e1: E, e2: E, e3: E, e4: E) : MutableSet<E> =
 fun <E : Enum<E>> enumSetOf(e1: E, e2: E, e3: E, e4: E, e5: E) : MutableSet<E> =
     EnumSet.of(e1, e2, e3, e4, e5)
 
+fun <E : Enum<E>> enumSetOf(first: E, vararg rest: E) : MutableSet<E> =
+    EnumSet.of(first, *rest)
+
 private const val INT_MAX_POWER_OF_TWO: Int = Int.MAX_VALUE / 2 + 1
 
 internal fun mapCapacity(expectedSize: Int): Int {
