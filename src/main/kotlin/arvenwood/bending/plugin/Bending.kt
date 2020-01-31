@@ -17,6 +17,8 @@ import arvenwood.bending.api.util.registerModule
 import arvenwood.bending.api.util.setProvider
 import arvenwood.bending.plugin.ability.air.*
 import arvenwood.bending.plugin.ability.fire.*
+import arvenwood.bending.plugin.command.abilityConfig
+import arvenwood.bending.plugin.command.child
 import arvenwood.bending.plugin.config.SimpleAbilityConfigService
 import arvenwood.bending.plugin.protection.GriefDefenderProtection
 import arvenwood.bending.plugin.protection.SimpleBuildProtectionService
@@ -25,18 +27,24 @@ import arvenwood.bending.plugin.registry.HashMapCatalogRegistryModule
 import arvenwood.bending.plugin.service.*
 import com.griefdefender.api.GriefDefender
 import com.griefdefender.api.permission.flag.Flags
+import director.core.SimpleCommandTree
+import director.core.component1
+import director.core.component2
+import director.core.exception.CommandException
+import director.core.exception.CommandPermissionException
+import director.core.value.param
+import director.sponge.parameter.catalogType
+import director.sponge.parameter.player
+import director.sponge.register
+import director.sponge.requirePermission
+import director.sponge.sponge
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import me.rojo8399.placeholderapi.PlaceholderService
 import org.slf4j.Logger
 import org.spongepowered.api.Sponge
-import org.spongepowered.api.command.CommandException
-import org.spongepowered.api.command.CommandPermissionException
 import org.spongepowered.api.command.CommandResult
 import org.spongepowered.api.command.CommandSource
-import org.spongepowered.api.command.args.CommandContext
-import org.spongepowered.api.command.args.GenericArguments
-import org.spongepowered.api.command.spec.CommandSpec
 import org.spongepowered.api.config.ConfigDir
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.Listener
@@ -46,9 +54,7 @@ import org.spongepowered.api.plugin.Dependency
 import org.spongepowered.api.plugin.Plugin
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.chat.ChatTypes
-import org.spongepowered.api.text.format.TextColors
-import org.spongepowered.api.text.format.TextColors.LIGHT_PURPLE
-import org.spongepowered.api.text.format.TextColors.RESET
+import org.spongepowered.api.text.format.TextColors.*
 import java.nio.file.Path
 import javax.inject.Inject
 
@@ -79,6 +85,7 @@ class Bending @Inject constructor(
     private val abilityDirLoader: AbilityConfigLoader = FolderAbilityConfigLoader(this.abilitiesDir)
 
     private lateinit var transientBlockService: SimpleTransientBlockService
+    private lateinit var abilityConfigService: SimpleAbilityConfigService
 
     @Listener
     fun onPreInit(event: GamePreInitializationEvent) {
@@ -119,81 +126,137 @@ class Bending @Inject constructor(
         Sponge.getServiceManager().setProvider<ProtectionService>(this, EmptyProtectionService)
         Sponge.getServiceManager().setProvider<CooldownService>(this, SimpleCooldownService())
         Sponge.getServiceManager().setProvider<EffectService>(this, SimpleEffectService())
-        Sponge.getServiceManager().setProvider<AbilityConfigService>(this, SimpleAbilityConfigService())
+
+        this.abilityConfigService = SimpleAbilityConfigService()
+        Sponge.getServiceManager().setProvider<AbilityConfigService>(this, this.abilityConfigService)
     }
+
+//    private fun registerCommandsOld() {
+//        this.logger.info("Registering commands...")
+//
+//        val bind: CommandSpec = CommandSpec.builder()
+//            .permission("bending.user.bind.base")
+//            .arguments(
+//                catalogedElement(Text.of("ability"), AbilityType::class.java),
+//                optional(string(Text.of("config")), "default")
+//            )
+//            .executor { src: CommandSource, args: CommandContext ->
+//                if (src !is Player) throw CommandException(Text.of("You must be a player to run this command!"))
+//
+//                val type: AbilityType<*> = args.requireOne("ability")
+//                val configName: String = args.requireOne("config")
+//
+//                val config: AbilityConfig = AbilityConfigService.get()[configName, type]
+//                    ?: throw CommandException(Text.of("Unknown ability config."))
+//
+//                if (!src.hasPermission("bending.user.bind.config.$configName")) {
+//                    throw CommandPermissionException(Text.of("You do not have permission to use that config!"))
+//                }
+//
+//                BenderService.get()[src.uniqueId].selectedAbility = config.ability
+//                src.sendMessage(
+//                    ChatTypes.ACTION_BAR,
+//                    Text.of("Selected Ability (config ", LIGHT_PURPLE, config.name, RESET, "): ", type.element.color, type.name)
+//                )
+//
+//                CommandResult.success()
+//            }
+//            .build()
+//
+//        val clear: CommandSpec = CommandSpec.builder()
+//            .permission("bending.user.clear")
+//            .executor { src: CommandSource, _: CommandContext ->
+//                if (src !is Player) throw CommandException(Text.of("You must be a player to run this command!"))
+//
+//                BenderService.get()[src.uniqueId].clearEquipped()
+//                src.sendMessage(Text.of(TextColors.GREEN, "Cleared all equipped abilities."))
+//
+//                CommandResult.success()
+//            }
+//            .build()
+//
+//        val copy: CommandSpec = CommandSpec.builder()
+//            .permission("bending.user.copy")
+//            .arguments(player(Text.of("player")))
+//            .executor { src, args ->
+//                if (src !is Player) throw CommandException(Text.of("You must be a player to run this command!"))
+//
+//                val target: Player = args.requireOne("player")
+//
+//                val srcBender: Bender = BenderService.get()[src.uniqueId]
+//                val targetBender: Bender = BenderService.get()[target.uniqueId]
+//
+//                srcBender.clearEquipped()
+//                for ((index, ability) in targetBender.equippedAbilities) {
+//                    srcBender[index] = ability
+//                }
+//
+//                CommandResult.success()
+//            }
+//            .build()
+//
+//        val bending: CommandSpec = CommandSpec.builder()
+//            .permission("bending.base")
+//            .child(bind, "bind", "b")
+//            .child(clear, "clear")
+//            .child(copy, "copy")
+//            .build()
+//
+//        Sponge.getCommandManager().register(this, bending, "bending", "b")
+//    }
 
     private fun registerCommands() {
         this.logger.info("Registering commands...")
 
-        val bind: CommandSpec = CommandSpec.builder()
-            .permission("bending.user.bind.base")
-            .arguments(
-                GenericArguments.catalogedElement(Text.of("ability"), AbilityType::class.java),
-                GenericArguments.optional(GenericArguments.string(Text.of("config")), "default")
-            )
-            .executor { src: CommandSource, args: CommandContext ->
-                if (src !is Player) throw CommandException(Text.of("You must be a player to run this command!"))
+        val bending: SimpleCommandTree.Root<CommandSource, Unit, CommandResult> = sponge("bending", "b") {
+            requirePermission("bending.base")
 
-                val type: AbilityType<*> = args.requireOne("ability")
-                val configName: String = args.requireOne("config")
+            child("bind", "b", permission = "bending.user.bind.base")
+                .argument(catalogType<AbilityType<*>>() param "ability")
+                .argument(abilityConfig() param "config")
+                .executor { source, (config: AbilityConfig, type: AbilityType<*>) ->
+                    if (source !is Player) throw CommandException(message = "You must be a player to use that command!")
 
-                val config: AbilityConfig = AbilityConfigService.get()[configName, type]
-                    ?: throw CommandException(Text.of("Unknown ability config."))
+                    if (!source.hasPermission("bending.user.bind.config.${config.name}"))
+                        throw CommandPermissionException()
 
-                if (!src.hasPermission("bending.user.bind.config.$configName")) {
-                    throw CommandPermissionException(Text.of("You do not have permission to use that config!"))
+                    BenderService.get()[source.uniqueId].selectedAbility = config.ability
+                    source.sendMessage(
+                        ChatTypes.ACTION_BAR,
+                        Text.of("Selected Ability (config ", LIGHT_PURPLE, config.name, RESET, "): ", type.element.color, type.name)
+                    )
+
+                    CommandResult.success()
                 }
 
-                BenderService.get()[src.uniqueId].selectedAbility = config.ability
-                src.sendMessage(
-                    ChatTypes.ACTION_BAR,
-                    Text.of("Selected Ability (config ", LIGHT_PURPLE, config.name, RESET, "): ", type.element.color, type.name)
-                )
+            child("clear", permission = "bending.user.clear")
+                .executor { source, _ ->
+                    if (source !is Player) throw CommandException(message = "You must be a player to use that command!")
 
-                CommandResult.success()
-            }
-            .build()
+                    BenderService.get()[source.uniqueId].clearEquipped()
+                    source.sendMessage(Text.of(GREEN, "Cleared all equipped abilities."))
 
-        val clear: CommandSpec = CommandSpec.builder()
-            .permission("bending.user.clear")
-            .executor { src: CommandSource, _: CommandContext ->
-                if (src !is Player) throw CommandException(Text.of("You must be a player to run this command!"))
-
-                BenderService.get()[src.uniqueId].clearEquipped()
-                src.sendMessage(Text.of(TextColors.GREEN, "Cleared all equipped abilities."))
-
-                CommandResult.success()
-            }
-            .build()
-
-        val copy: CommandSpec = CommandSpec.builder()
-            .permission("bending.user.copy")
-            .arguments(GenericArguments.player(Text.of("player")))
-            .executor { src, args ->
-                if (src !is Player) throw CommandException(Text.of("You must be a player to run this command!"))
-
-                val target: Player = args.requireOne("player")
-
-                val srcBender: Bender = BenderService.get()[src.uniqueId]
-                val targetBender: Bender = BenderService.get()[target.uniqueId]
-
-                srcBender.clearEquipped()
-                for ((index, ability) in targetBender.equippedAbilities) {
-                    srcBender[index] = ability
+                    CommandResult.success()
                 }
 
-                CommandResult.success()
-            }
-            .build()
+            child("copy", permission = "bending.user.copy")
+                .argument(player() param "player")
+                .executor { source, (target: Player) ->
+                    if (source !is Player) throw CommandException(message = "You must be a player to use that command!")
 
-        val bending: CommandSpec = CommandSpec.builder()
-            .permission("bending.base")
-            .child(bind, "bind", "b")
-            .child(clear, "clear")
-            .child(copy, "copy")
-            .build()
+                    val srcBender: Bender = BenderService.get()[source.uniqueId]
+                    val targetBender: Bender = BenderService.get()[target.uniqueId]
 
-        Sponge.getCommandManager().register(this, bending, "bending", "b")
+                    srcBender.clearEquipped()
+                    for ((index, ability) in targetBender.equippedAbilities) {
+                        srcBender[index] = ability
+                    }
+
+                    CommandResult.success()
+                }
+        }
+
+        Sponge.getCommandManager().register(this, bending)
     }
 
     @Listener

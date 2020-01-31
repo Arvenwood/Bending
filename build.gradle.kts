@@ -16,7 +16,7 @@ repositories {
 
     maven("https://repo.spongepowered.org/maven")
 
-    // GriefDefender
+    // GriefDefender & Director
     maven("https://jitpack.io")
 }
 
@@ -26,10 +26,15 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0")
 
-    // Kotlin shading
+    implementation("com.github.TheFrontier.director:director-core:8bb043b9a8")
+    implementation("com.github.TheFrontier.director:director-sponge:8bb043b9a8")
+
+    // Shaded
     runtime(kotlin("stdlib-jdk8"))
     runtime("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
     runtime("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0")
+    runtime("com.github.TheFrontier.director:director-core:8bb043b9a8")
+    runtime("com.github.TheFrontier.director:director-sponge:8bb043b9a8")
 
     // Sponge
     compileOnly("org.spongepowered:spongeapi:7.1.0")
