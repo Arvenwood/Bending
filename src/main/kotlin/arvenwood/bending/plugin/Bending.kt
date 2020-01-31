@@ -2,8 +2,10 @@ package arvenwood.bending.plugin
 
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.AbilityType
-import arvenwood.bending.plugin.ability.air.*
-import arvenwood.bending.plugin.ability.fire.*
+import arvenwood.bending.api.config.AbilityConfig
+import arvenwood.bending.api.config.AbilityConfigLoader
+import arvenwood.bending.api.config.AbilityConfigService
+import arvenwood.bending.api.config.simple.FolderAbilityConfigLoader
 import arvenwood.bending.api.element.Element
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.protection.BuildProtection
@@ -13,6 +15,9 @@ import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.service.*
 import arvenwood.bending.api.util.registerModule
 import arvenwood.bending.api.util.setProvider
+import arvenwood.bending.plugin.ability.air.*
+import arvenwood.bending.plugin.ability.fire.*
+import arvenwood.bending.plugin.config.SimpleAbilityConfigService
 import arvenwood.bending.plugin.protection.GriefDefenderProtection
 import arvenwood.bending.plugin.protection.SimpleBuildProtectionService
 import arvenwood.bending.plugin.protection.SimplePvpProtectionService
@@ -26,11 +31,13 @@ import me.rojo8399.placeholderapi.PlaceholderService
 import org.slf4j.Logger
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.command.CommandException
+import org.spongepowered.api.command.CommandPermissionException
 import org.spongepowered.api.command.CommandResult
 import org.spongepowered.api.command.CommandSource
 import org.spongepowered.api.command.args.CommandContext
 import org.spongepowered.api.command.args.GenericArguments
 import org.spongepowered.api.command.spec.CommandSpec
+import org.spongepowered.api.config.ConfigDir
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.Listener
 import org.spongepowered.api.event.game.GameRegistryEvent
@@ -40,6 +47,9 @@ import org.spongepowered.api.plugin.Plugin
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.chat.ChatTypes
 import org.spongepowered.api.text.format.TextColors
+import org.spongepowered.api.text.format.TextColors.LIGHT_PURPLE
+import org.spongepowered.api.text.format.TextColors.RESET
+import java.nio.file.Path
 import javax.inject.Inject
 
 @Plugin(
@@ -52,7 +62,10 @@ import javax.inject.Inject
     url = "https://ore.spongepowered.org/doot/Bending",
     authors = ["doot"]
 )
-class Bending @Inject constructor(private val logger: Logger) {
+class Bending @Inject constructor(
+    private val logger: Logger,
+    @ConfigDir(sharedRoot = false) private val configDir: Path
+) {
 
     companion object {
         internal lateinit var ASYNC: CoroutineDispatcher
@@ -62,12 +75,20 @@ class Bending @Inject constructor(private val logger: Logger) {
             private set
     }
 
+    private val abilitiesDir: Path = this.configDir.resolve("abilities")
+    private val abilityDirLoader: AbilityConfigLoader = FolderAbilityConfigLoader(this.abilitiesDir)
+
     private lateinit var transientBlockService: SimpleTransientBlockService
 
     @Listener
     fun onPreInit(event: GamePreInitializationEvent) {
         ASYNC = Sponge.getScheduler().createAsyncExecutor(this).asCoroutineDispatcher()
         SYNC = Sponge.getScheduler().createSyncExecutor(this).asCoroutineDispatcher()
+
+        this.logger.info("Copying default ability config, if absent...")
+
+        Sponge.getAssetManager().getAsset(this, "abilities/default.conf").get()
+            .copyToFile(this.abilitiesDir.resolve("default.conf"), false, true)
 
         this.logger.info("Registering catalog modules...")
 
@@ -87,34 +108,6 @@ class Bending @Inject constructor(private val logger: Logger) {
         Sponge.getEventManager().registerListeners(this, BendingListener())
     }
 
-    @Listener
-    fun onPostInit(event: GamePostInitializationEvent) {
-        registerPlaceholders()
-    }
-
-    private fun registerPlaceholders() {
-        if (!Sponge.getPluginManager().isLoaded("placeholderapi")) return
-
-        this.logger.info("PlaceholderAPI found. Registering placeholders...")
-
-        val service: PlaceholderService = Sponge.getServiceManager().provide(PlaceholderService::class.java).orElse(null) ?: return
-    }
-
-    @Listener
-    fun onStarting(event: GameAboutToStartServerEvent) {
-        this.logger.info("Registering protection services...")
-
-        Sponge.getServiceManager().setProvider<BuildProtectionService>(this, SimpleBuildProtectionService())
-        Sponge.getServiceManager().setProvider<PvpProtectionService>(this, SimplePvpProtectionService())
-    }
-
-    @Listener
-    fun onStarted(event: GameStartedServerEvent) {
-        this.logger.info("Starting tasks...")
-
-        this.transientBlockService.start(this)
-    }
-
     private fun registerServices() {
         this.logger.info("Registering services...")
 
@@ -126,20 +119,36 @@ class Bending @Inject constructor(private val logger: Logger) {
         Sponge.getServiceManager().setProvider<ProtectionService>(this, EmptyProtectionService)
         Sponge.getServiceManager().setProvider<CooldownService>(this, SimpleCooldownService())
         Sponge.getServiceManager().setProvider<EffectService>(this, SimpleEffectService())
+        Sponge.getServiceManager().setProvider<AbilityConfigService>(this, SimpleAbilityConfigService())
     }
 
     private fun registerCommands() {
         this.logger.info("Registering commands...")
 
         val bind: CommandSpec = CommandSpec.builder()
-            .permission("bending.user.bind")
-            .arguments(GenericArguments.catalogedElement(Text.of("ability"), AbilityType::class.java))
+            .permission("bending.user.bind.base")
+            .arguments(
+                GenericArguments.catalogedElement(Text.of("ability"), AbilityType::class.java),
+                GenericArguments.optional(GenericArguments.string(Text.of("config")), "default")
+            )
             .executor { src: CommandSource, args: CommandContext ->
                 if (src !is Player) throw CommandException(Text.of("You must be a player to run this command!"))
 
-                val ability: AbilityType<*> = args.requireOne("ability")
-                BenderService.get()[src.uniqueId].selectedAbility = ability.default
-                src.sendMessage(ChatTypes.ACTION_BAR, Text.of("Selected Ability: ", ability.element.color, ability.name))
+                val type: AbilityType<*> = args.requireOne("ability")
+                val configName: String = args.requireOne("config")
+
+                val config: AbilityConfig = AbilityConfigService.get()[configName, type]
+                    ?: throw CommandException(Text.of("Unknown ability config."))
+
+                if (!src.hasPermission("bending.user.bind.config.$configName")) {
+                    throw CommandPermissionException(Text.of("You do not have permission to use that config!"))
+                }
+
+                BenderService.get()[src.uniqueId].selectedAbility = config.ability
+                src.sendMessage(
+                    ChatTypes.ACTION_BAR,
+                    Text.of("Selected Ability (config ", LIGHT_PURPLE, config.name, RESET, "): ", type.element.color, type.name)
+                )
 
                 CommandResult.success()
             }
@@ -185,6 +194,38 @@ class Bending @Inject constructor(private val logger: Logger) {
             .build()
 
         Sponge.getCommandManager().register(this, bending, "bending", "b")
+    }
+
+    @Listener
+    fun onPostInit(event: GamePostInitializationEvent) {
+        registerPlaceholders()
+
+        this.logger.info("Loading ability configs...")
+
+        AbilityConfigService.get().registerAll(this.abilityDirLoader.load())
+    }
+
+    private fun registerPlaceholders() {
+        if (!Sponge.getPluginManager().isLoaded("placeholderapi")) return
+
+        this.logger.info("PlaceholderAPI found. Registering placeholders...")
+
+        val service: PlaceholderService = Sponge.getServiceManager().provide(PlaceholderService::class.java).orElse(null) ?: return
+    }
+
+    @Listener
+    fun onStarting(event: GameAboutToStartServerEvent) {
+        this.logger.info("Registering protection services...")
+
+        Sponge.getServiceManager().setProvider<BuildProtectionService>(this, SimpleBuildProtectionService())
+        Sponge.getServiceManager().setProvider<PvpProtectionService>(this, SimplePvpProtectionService())
+    }
+
+    @Listener
+    fun onStarted(event: GameStartedServerEvent) {
+        this.logger.info("Starting tasks...")
+
+        this.transientBlockService.start(this)
     }
 
     @Listener

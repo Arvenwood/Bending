@@ -4,6 +4,7 @@ import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
 import arvenwood.bending.plugin.ability.SimpleAbilityContext
 import arvenwood.bending.api.service.CooldownService
+import arvenwood.bending.api.util.StackableBoolean
 import arvenwood.bending.api.util.selectedSlotIndex
 import arvenwood.bending.plugin.ability.SimpleAbilityExecution
 import com.google.common.collect.Table
@@ -26,6 +27,8 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
         Tables.newCustomTable<AbilityType<*>, AbilityExecutionType, Continuation<Unit>>(IdentityHashMap()) {
             EnumMap(AbilityExecutionType::class.java)
         }
+
+    override var flight = StackableBoolean(0)
 
     override var selectedAbility: Ability<*>?
         get() = this[this.player.selectedSlotIndex]

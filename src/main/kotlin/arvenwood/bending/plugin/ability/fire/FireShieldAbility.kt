@@ -49,9 +49,12 @@ data class FireShieldAbility(
             fireTicks = 2
         )
 
-        override fun load(node: ConfigurationNode): FireShieldAbility {
-            TODO()
-        }
+        override fun load(node: ConfigurationNode): FireShieldAbility = FireShieldAbility(
+            cooldown = node.getNode("cooldown").long,
+            duration = node.getNode("duration").long,
+            radius = node.getNode("radius").double,
+            fireTicks = node.getNode("fireTicks").int
+        )
     }
 
     private val random: Random = java.util.Random().asKotlinRandom()

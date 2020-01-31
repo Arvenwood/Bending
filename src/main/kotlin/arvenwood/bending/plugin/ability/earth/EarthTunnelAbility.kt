@@ -42,9 +42,18 @@ data class EarthTunnelAbility(
         override val default: Ability<EarthTunnelAbility>
             get() = TODO("not implemented")
 
-        override fun load(node: ConfigurationNode): EarthTunnelAbility {
-            TODO("not implemented")
-        }
+        override fun load(node: ConfigurationNode): EarthTunnelAbility = EarthTunnelAbility(
+            cooldown = node.getNode("cooldown").long,
+            revertTime = node.getNode("revertTime").long,
+            revert = node.getNode("revert").boolean,
+            dropLootIfNotRevert = node.getNode("dropLootIfNotRevert").boolean,
+            interval = node.getNode("interval").long,
+            blocksPerInterval = node.getNode("blocksPerInterval").int,
+            ignoreOres = node.getNode("ignoreOres").boolean,
+            range = node.getNode("range").double,
+            radius = node.getNode("radius").double,
+            maxRadius = node.getNode("maxRadius").double
+        )
 
         private const val DEG_20_IN_RAD: Double = 0.3490658504
     }

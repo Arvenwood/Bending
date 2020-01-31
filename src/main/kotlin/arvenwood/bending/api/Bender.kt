@@ -4,10 +4,13 @@ import arvenwood.bending.api.ability.Ability
 import arvenwood.bending.api.ability.AbilityExecution
 import arvenwood.bending.api.ability.AbilityExecutionType
 import arvenwood.bending.api.ability.AbilityType
+import arvenwood.bending.api.util.StackableBoolean
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 
 interface Bender {
+
+    var flight: StackableBoolean
 
     var selectedAbility: Ability<*>?
 

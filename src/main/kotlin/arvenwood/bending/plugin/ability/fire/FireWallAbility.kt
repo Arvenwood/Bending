@@ -55,9 +55,16 @@ data class FireWallAbility(
             height = 4
         )
 
-        override fun load(node: ConfigurationNode): FireWallAbility {
-            TODO()
-        }
+        override fun load(node: ConfigurationNode): FireWallAbility = FireWallAbility(
+            cooldown = node.getNode("cooldown").long,
+            duration = node.getNode("duration").long,
+            displayInterval = node.getNode("displayInterval").long,
+            damage = node.getNode("damage").double,
+            damageInterval = node.getNode("damageInterval").long,
+            fireTicks = node.getNode("fireTicks").int,
+            width = node.getNode("width").int,
+            height = node.getNode("height").int
+        )
     }
 
     private val random: Random = java.util.Random().asKotlinRandom()

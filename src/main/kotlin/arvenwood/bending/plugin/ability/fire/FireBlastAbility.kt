@@ -59,9 +59,18 @@ data class FireBlastAbility(
             smokeRadius = 0.3
         )
 
-        override fun load(node: ConfigurationNode): FireBlastAbility {
-            TODO()
-        }
+        override fun load(node: ConfigurationNode): FireBlastAbility = FireBlastAbility(
+            cooldown = node.getNode("cooldown").long,
+            damage = node.getNode("damage").double,
+            fireTicks = node.getNode("fireTicks").int,
+            knockback = node.getNode("knockback").double,
+            radius = node.getNode("radius").double,
+            range = node.getNode("range").double,
+            speed = node.getNode("speed").double,
+            showParticles = node.getNode("showParticles").boolean,
+            flameRadius = node.getNode("flameRadius").double,
+            smokeRadius = node.getNode("smokeRadius").double
+        )
 
         private const val MAX_TICKS: Int = 10000
     }

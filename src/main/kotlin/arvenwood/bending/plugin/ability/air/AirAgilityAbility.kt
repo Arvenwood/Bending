@@ -5,6 +5,7 @@ import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.util.enumSetOf
+import arvenwood.bending.api.util.isSprinting
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.effect.potion.PotionEffect
@@ -33,9 +34,12 @@ data class AirAgilityAbility(
             speedPower = 2
         )
 
-        override fun load(node: ConfigurationNode): AirAgilityAbility {
-            TODO("not implemented")
-        }
+        override fun load(node: ConfigurationNode): AirAgilityAbility = AirAgilityAbility(
+            cooldown = node.getNode("cooldown").long,
+            duration = node.getNode("duration").long,
+            jumpPower = node.getNode("jumpPower").int,
+            speedPower = node.getNode("speedPower").int
+        )
     }
 
     private val effectJump: PotionEffect =
@@ -59,7 +63,7 @@ data class AirAgilityAbility(
 
         abilityLoopUnsafe {
             if (player.isRemoved) return Success
-            if (!player.getOrElse(Keys.IS_SPRINTING, false)) return Success
+            if (!player.isSprinting) return Success
 
             player.transform(Keys.POTION_EFFECTS) { effects: MutableList<PotionEffect> ->
                 if (effects.none { it.type == PotionEffectTypes.JUMP_BOOST && it.amplifier >= this.jumpPower }) {

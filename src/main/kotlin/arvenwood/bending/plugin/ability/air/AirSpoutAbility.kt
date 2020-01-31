@@ -8,6 +8,7 @@ import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.util.*
 import com.flowpowered.math.vector.Vector3d
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.effect.particle.ParticleEffect
@@ -42,9 +43,12 @@ data class AirSpoutAbility(
             height = 16.0
         )
 
-        override fun load(node: ConfigurationNode): AirSpoutAbility {
-            TODO()
-        }
+        override fun load(node: ConfigurationNode): AirSpoutAbility = AirSpoutAbility(
+            cooldown = node.getNode("cooldown").long,
+            duration = node.getNode("duration").long,
+            interval = node.getNode("interval").long,
+            height = node.getNode("height").double
+        )
     }
 
     private val random: Random = java.util.Random().asKotlinRandom()
@@ -63,7 +67,7 @@ data class AirSpoutAbility(
         context[angle] = 0
 
         val startTime: Long = System.currentTimeMillis()
-        val defer: Deferred<Unit> = BenderService.get()[player.uniqueId].deferExecution(AirSpoutAbility, AbilityExecutionType.LEFT_CLICK)
+        val defer: Job = BenderService.get()[player.uniqueId].deferExecution(AirSpoutAbility, AbilityExecutionType.LEFT_CLICK)
         abilityLoopUnsafe {
             if (player.isRemoved) {
                 return Success
@@ -81,7 +85,7 @@ data class AirSpoutAbility(
             }
 
             player.offer(Keys.FALL_DISTANCE, 0F)
-            player.offer(Keys.IS_SPRINTING, false)
+            player.isSprinting = false
 
             if (this.random.nextInt(4) == 0) {
                 // Play the sounds every now and then.
@@ -92,21 +96,21 @@ data class AirSpoutAbility(
             val dy: Double = player.location.y - highest.y
 
             if (dy > this.height) {
-                player.offer(Keys.CAN_FLY, false)
-                player.offer(Keys.IS_FLYING, false)
+                player.canFly = false
+                player.isFlying = false
             } else {
-                player.offer(Keys.CAN_FLY, true)
-                player.offer(Keys.IS_FLYING, true)
+                player.canFly = true
+                player.isFlying = true
             }
 
-            rotateAirColumn(context, player.location, highest)
+            this.rotateAirColumn(context, player.location, highest)
         }
     }
 
     override fun cleanup(context: AbilityContext) {
         val player = context[player] ?: return
-        player.offer(Keys.CAN_FLY, false)
-        player.offer(Keys.IS_FLYING, false)
+        player.canFly = false
+        player.isFlying = false
     }
 
     private fun rotateAirColumn(context: AbilityContext, playerLocation: Location<World>, highest: Location<World>) {
@@ -125,7 +129,7 @@ data class AirSpoutAbility(
             while (i <= dy) {
                 index = if (index >= 8) 0 else index + 1
                 val effectLoc = location.add(0.0, i.toDouble(), 0.0)
-                effectLoc.spawnParticles(particleEffect)
+                effectLoc.spawnParticles(this.particleEffect)
                 i++
             }
         }

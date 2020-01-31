@@ -23,6 +23,9 @@ import kotlin.math.sqrt
 import kotlin.random.Random
 import kotlin.random.asKotlinRandom
 
+/**
+ * TODO make it work
+ */
 data class AirTornadoAbility(
     override val cooldown: Long,
     val duration: Long,
@@ -53,8 +56,30 @@ data class AirTornadoAbility(
             particles = 4
         )
 
-        override fun load(node: ConfigurationNode): AirTornadoAbility {
-            TODO()
+        override fun load(node: ConfigurationNode): AirTornadoAbility = AirTornadoAbility(
+            cooldown = node.getNode("cooldown").long,
+            duration = node.getNode("duration").long,
+            height = node.getNode("height").double,
+            pushFactor = node.getNode("pushFactor").double,
+            radius = node.getNode("radius").double,
+            range = node.getNode("range").double,
+            speed = node.getNode("speed").double,
+            particles = node.getNode("particles").int
+        )
+
+        private fun createAngleDegMap(height: Double, numStreams: Int): MutableMap<Int, Int> {
+            val angles = HashMap<Int, Int>()
+            var angle = 0
+            var i = 0
+            val di: Int = (height / numStreams).toInt()
+            while (i <= height) {
+                angles[i] = angle
+                angle += 90
+                if (angle == 360) angle = 0
+
+                i += di
+            }
+            return angles
         }
     }
 
@@ -62,33 +87,20 @@ data class AirTornadoAbility(
 
     private val random: Random = java.util.Random().asKotlinRandom()
 
+    private val angleDegMap: Map<Int, Int> = createAngleDegMap(this.height, this.numStreams)
+
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context[player] ?: return ErrorNoTarget
-        val angles: MutableMap<Int, Int> = createAngleMap()
+        val angles: MutableMap<Int, Int> = this.angleDegMap.toMap(HashMap())
 
         val startTime: Long = System.currentTimeMillis()
         abilityLoopUnsafe {
             if (!player.getOrElse(Keys.IS_SNEAKING, false)) return Success
             if (player.eyeLocation.blockType.isLiquid()) return Success
             if (this.duration > 0 && startTime + this.duration <= System.currentTimeMillis()) return Success
+
+            this.rotateTornado(context, player, angles)
         }
-    }
-
-    override fun cleanup(context: AbilityContext) {}
-
-    private fun createAngleMap(): MutableMap<Int, Int> {
-        val angles = HashMap<Int, Int>()
-        var angle = 0
-        var i = 0
-        val di: Int = (this.height / this.numStreams).toInt()
-        while (i <= this.height) {
-            angles[i] = angle
-            angle += 90
-            if (angle == 360) angle = 0
-
-            i += di
-        }
-        return angles
     }
 
     private fun rotateTornado(context: AbilityContext, player: Player, angles: MutableMap<Int, Int>) {
@@ -133,12 +145,10 @@ data class AirTornadoAbility(
                             vz = direction.z
                             val dy: Double = player.location.y - origin.y
 
-                            if (dy >= currentHeight * 0.95) {
-                                vy = 0.0
-                            } else if (dy >= currentHeight * 0.85) {
-                                vy = 6.0 * (0.95 - dy / currentHeight)
-                            } else {
-                                vy = 0.6
+                            vy = when {
+                                dy >= currentHeight * 0.95 -> 0.0
+                                dy >= currentHeight * 0.85 -> 6.0 * (0.95 - dy / currentHeight)
+                                else -> 0.6
                             }
                         }
 

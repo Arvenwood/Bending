@@ -47,9 +47,15 @@ data class CombustionAbility(
             speed = 25.0
         )
 
-        override fun load(node: ConfigurationNode): CombustionAbility {
-            TODO()
-        }
+        override fun load(node: ConfigurationNode): CombustionAbility = CombustionAbility(
+            cooldown = node.getNode("cooldown").long,
+            canBreakBlocks = node.getNode("canBreakBlocks").boolean,
+            damage = node.getNode("damage").double,
+            power = node.getNode("power").float,
+            radius = node.getNode("radius").double,
+            range = node.getNode("range").double,
+            speed = node.getNode("speed").double
+        )
     }
 
     private val speedFactor: Double = this.speed * (50 / 1000.0)

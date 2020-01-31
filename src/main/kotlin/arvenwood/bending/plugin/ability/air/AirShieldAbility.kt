@@ -4,15 +4,15 @@ import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.protection.BuildProtectionService
 import arvenwood.bending.api.protection.PvpProtectionService
+import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.block.BlockTypes
 import org.spongepowered.api.data.key.Keys
-import org.spongepowered.api.effect.particle.ParticleEffect
-import org.spongepowered.api.effect.particle.ParticleTypes
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.player.Player
@@ -30,7 +30,7 @@ data class AirShieldAbility(
     val speed: Double,
     val maxRadius: Double,
     val initialRadius: Double,
-    val streams: Int,
+    val numStreams: Int,
     val particles: Int
 ) : Ability<AirShieldAbility> {
 
@@ -48,16 +48,42 @@ data class AirShieldAbility(
             speed = 10.0,
             maxRadius = 7.0,
             initialRadius = 1.0,
-            streams = 5,
+            numStreams = 5,
             particles = 5
         )
 
-        override fun load(node: ConfigurationNode): AirShieldAbility {
-            TODO()
+        override fun load(node: ConfigurationNode): AirShieldAbility = AirShieldAbility(
+            cooldown = node.getNode("cooldown").long,
+            duration = node.getNode("duration").long,
+            speed = node.getNode("speed").double,
+            maxRadius = node.getNode("maxRadius").double,
+            initialRadius = node.getNode("initialRadius").double,
+            numStreams = node.getNode("numStreams").int,
+            particles = node.getNode("particles").int
+        )
+
+        @JvmStatic
+        private fun createAngleDegMap(maxRadius: Double, numStreams: Int): Map<Int, Int> {
+            val angles = HashMap<Int, Int>()
+            var angle = 0
+            val di: Int = (maxRadius * 2 / numStreams).toInt()
+            for (i: Int in -maxRadius.toInt() + di until maxRadius.toInt() step di) {
+                angles[i] = angle
+                angle += 90
+                if (angle == 360) angle = 0
+            }
+            return angles
         }
+
+        private val COS_50_DEG: Double = cos(Math.toRadians(50.0))
+        private val SIN_50_DEG: Double = sin(Math.toRadians(50.0))
     }
 
     private val random: Random = java.util.Random().asKotlinRandom()
+
+    private val speedRadians: Double = Math.toRadians(this.speed)
+
+    private val angleDegMap: Map<Int, Int> = createAngleDegMap(this.maxRadius, this.numStreams)
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context[player] ?: return ErrorNoTarget
@@ -66,14 +92,7 @@ data class AirShieldAbility(
 
         var radius: Double by context.by(StandardContext.radius, this.initialRadius)
 
-        val angles = HashMap<Int, Int>()
-        var angle = 0
-        val di: Int = (this.maxRadius * 2 / this.streams).toInt()
-        for (i: Int in -this.maxRadius.toInt() + di until this.maxRadius.toInt() step di) {
-            angles[i] = angle
-            angle += 90
-            if (angle == 360) angle = 0
-        }
+        val angles: MutableMap<Int, Int> = this.angleDegMap.toMap(HashMap())
 
         abilityLoopUnsafe {
             if (player.eyeLocation.blockType.isLiquid()) {
@@ -98,12 +117,11 @@ data class AirShieldAbility(
             if (PvpProtectionService.get().isProtected(player, entity)) continue
 
             if (origin.distanceSquared(entity.location) > 4) {
-                val angle: Double = Math.toRadians(50.0)
                 val x: Double = entity.location.x - origin.x
                 val z: Double = entity.location.z - origin.z
                 val magnitude: Double = sqrt(x * x + z * z)
-                val vx: Double = (x * cos(angle) - z * sin(angle)) / magnitude
-                val vz: Double = (x * sin(angle) - z * cos(angle)) / magnitude
+                val vx: Double = (x * COS_50_DEG - z * SIN_50_DEG) / magnitude
+                val vz: Double = (x * SIN_50_DEG - z * COS_50_DEG) / magnitude
 
                 entity.velocity = Vector3d(vx, entity.velocity.y, vz).mul(0.5)
                 entity.offer(Keys.FALL_DISTANCE, 0F)
@@ -128,13 +146,8 @@ data class AirShieldAbility(
             val z: Double = origin.z + radius * sin(rAngle) * f
 
             val effect: Location<World> = origin.setPosition(Vector3d(x, y, z))
-            if (!ProtectionService.get().isProtected(player, effect)) {
-                val particleEffect = ParticleEffect.builder()
-                    .type(ParticleTypes.CLOUD)
-                    .quantity(this.particles)
-                    .offset(Vector3d(Math.random(), Math.random(), Math.random()))
-                    .build()
-                effect.spawnParticles(particleEffect)
+            if (!BuildProtectionService.get().isProtected(player, effect)) {
+                effect.spawnParticles(EffectService.get().createRandomParticle(Elements.Air, this.particles))
                 if (this.random.nextInt(4) == 0) {
                     effect.extent.playSound(SoundTypes.ENTITY_CREEPER_HURT, effect.position, 0.5, 1.0)
                 }
@@ -144,7 +157,7 @@ data class AirShieldAbility(
         }
 
         if (radius < this.maxRadius) {
-            // Kotlin doesn't like operator assignment
+            // Kotlin doesn't like operator assignment for delegates
             @Suppress("ReplaceWithOperatorAssignment")
             radius = radius + 0.3
         }

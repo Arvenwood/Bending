@@ -8,6 +8,15 @@ import org.spongepowered.api.profile.GameProfile
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 
+fun Location<World>.withX(x: Double): Location<World> =
+    this.setPosition(Vector3d(x, this.y, this.z))
+
+fun Location<World>.withY(y: Double): Location<World> =
+    this.setPosition(Vector3d(this.x, y, this.z))
+
+fun Location<World>.withZ(z: Double): Location<World> =
+    this.setPosition(Vector3d(this.x, this.y, z))
+
 fun Location<World>.getNearbyLocations(radius: Double) : List<Location<World>> {
     val result = ArrayList<Location<World>>()
 

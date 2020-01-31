@@ -40,9 +40,12 @@ data class FireJetAbility(
             showGliding = false
         )
 
-        override fun load(node: ConfigurationNode): FireJetAbility {
-            TODO()
-        }
+        override fun load(node: ConfigurationNode): FireJetAbility = FireJetAbility(
+            cooldown = node.getNode("cooldown").long,
+            duration = node.getNode("duration").long,
+            speed = node.getNode("speed").double,
+            showGliding = node.getNode("showGliding").boolean
+        )
     }
 
     private val random: Random = java.util.Random().asKotlinRandom()

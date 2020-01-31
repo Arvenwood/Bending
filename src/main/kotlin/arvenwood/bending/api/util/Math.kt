@@ -23,8 +23,8 @@ fun Vector3d.withY(y: Double): Vector3d =
 fun Vector3d.withZ(z: Double): Vector3d =
     Vector3d(this.x, this.y, z)
 
-fun Vector3d.withXZ(x: Double, y: Double): Vector3d =
-    Vector3d(x, this.y, this.z)
+fun Vector3d.withXZ(x: Double, z: Double): Vector3d =
+    Vector3d(x, this.y, z)
 
 fun Vector3d.angle(other: Vector3d): Double =
     acos(this.dot(other) / (this.length() * other.length()))

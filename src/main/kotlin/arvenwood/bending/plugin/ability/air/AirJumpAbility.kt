@@ -32,9 +32,10 @@ data class AirJumpAbility(
             multiplier = 3.0
         )
 
-        override fun load(node: ConfigurationNode): AirJumpAbility {
-            TODO()
-        }
+        override fun load(node: ConfigurationNode): AirJumpAbility = AirJumpAbility(
+            cooldown = node.getNode("cooldown").long,
+            multiplier = node.getNode("multiplier").double
+        )
     }
 
     private val particleEffect: ParticleEffect = ParticleEffect.builder()

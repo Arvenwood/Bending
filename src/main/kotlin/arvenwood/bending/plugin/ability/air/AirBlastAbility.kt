@@ -75,9 +75,21 @@ data class AirBlastAbility(
             selectRange = 10.0
         )
 
-        override fun load(node: ConfigurationNode): AirBlastAbility {
-            TODO()
-        }
+        override fun load(node: ConfigurationNode): AirBlastAbility = AirBlastAbility(
+            cooldown = node.getNode("cooldown").long,
+            range = node.getNode("radius").double,
+            speed = node.getNode("speed").double,
+            radius = node.getNode("radius").double,
+            damage = node.getNode("damage").double,
+            pushFactor = node.getNode("pushFactor").double,
+            pushFactorOther = node.getNode("pushFactorOther").double,
+            canFlickLevers = node.getNode("canFlickLevers").boolean,
+            canOpenDoors = node.getNode("canOpenDoors").boolean,
+            canPressButtons = node.getNode("canPressButtons").boolean,
+            canCoolLava = node.getNode("canCoolLava").boolean,
+            numParticles = node.getNode("numParticles").int,
+            selectRange = node.getNode("selectRange").double
+        )
 
         @JvmStatic
         internal val EXTINGUISH_EFFECT: ParticleEffect = ParticleEffect.builder().type(ParticleTypes.FIRE_SMOKE).build()

@@ -8,13 +8,17 @@ import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
-import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.effect.particle.ParticleEffect
+import org.spongepowered.api.effect.potion.PotionEffectTypes
+import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.living.player.Player
+import org.spongepowered.api.util.Direction.UP
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.random.Random
+import kotlin.random.asKotlinRandom
 
 data class AirScooterAbility(
     override val cooldown: Long,
@@ -36,9 +40,14 @@ data class AirScooterAbility(
         override val default: Ability<AirScooterAbility>
             get() = TODO("not implemented")
 
-        override fun load(node: ConfigurationNode): AirScooterAbility {
-            TODO("not implemented")
-        }
+        override fun load(node: ConfigurationNode): AirScooterAbility = AirScooterAbility(
+            cooldown = node.getNode("cooldown").long,
+            duration = node.getNode("duration").long,
+            interval = node.getNode("interval").long,
+            maxGroundHeight = node.getNode("maxGroundHeight").double,
+            radius = node.getNode("radius").double,
+            speed = node.getNode("speed").double
+        )
 
         private const val PHI_INCREMENT: Double = Math.PI * 2 / 5
         private const val TWO_PI: Double = Math.PI * 2
@@ -51,6 +60,8 @@ data class AirScooterAbility(
     private val particleEffect: ParticleEffect get() =
         EffectService.get().createParticle(Elements.Air, 1, Vector3d.ZERO)
 
+    private val random: Random = java.util.Random().asKotlinRandom()
+
     override fun preempt(context: AbilityContext, executionType: AbilityExecutionType) {
         val player: Player = context.require(StandardContext.player)
         // Cancel all other air scooters.
@@ -61,14 +72,10 @@ data class AirScooterAbility(
         val player: Player = context.require(StandardContext.player)
 
         val startTime: Long = System.currentTimeMillis()
+        var phi = 0.0
         abilityLoopUnsafe {
-            if (player.getOrElse(Keys.IS_SNEAKING, false)) return Success
+            if (player.isSneaking) return Success
             if (this.duration > 0 && startTime + this.duration <= System.currentTimeMillis()) return Success
-
-            val origin: Location<World> = player.eyeLocation
-            val floor: Location<World>? = getFloor(origin) ?: return Success
-
-            val newVelocity: Vector3d = player.headDirection.normalize().mul(this.speed)
 
             if (startTime + this.interval <= System.currentTimeMillis()) {
                 // Only display particles and check velocity every now and then.
@@ -78,7 +85,43 @@ data class AirScooterAbility(
                     return Success
                 }
 
-                this.displayScooter(context)
+                phi = this.displayScooter(phi, context)
+            }
+
+            val origin: Location<World> = player.eyeLocation
+            val floor: Location<World> = getFloor(origin) ?: return Success
+
+            var velocity: Vector3d = player.headDirection.normalize().mul(this.speed)
+
+            val distance: Double = player.location.y - floor.y
+            velocity = when {
+                distance > 2.75 -> velocity.withY(-0.25)
+                distance < 2.0 -> velocity.withY(0.25)
+                else -> velocity.withY(0.0)
+            }
+
+            val forward: Location<World> = floor.add(velocity.mul(1.2))
+            if (!(forward.blockType.isSolid() || forward.blockType.isWater())) {
+                velocity = velocity.add(0.0, -0.1, 0.0)
+            } else if (forward.getRelative(UP).blockType.isSolid() || forward.getRelative(UP).blockType.isWater()) {
+                velocity = velocity.add(0.0, 0.7, 0.0)
+            }
+
+            var location: Location<World> = player.location
+            if (!location.add(0.0, 2.0, 0.0).blockType.isWater()) {
+                location = location.withY(floor.y + 1.5)
+            } else {
+                return@abilityLoopUnsafe
+            }
+
+            player.isSprinting = false
+            player.removePotionEffectByType(PotionEffectTypes.SPEED)
+
+            player.velocity = velocity
+
+            if (this.random.nextInt(4) == 0) {
+                // Play the sounds every now and then.
+                location.extent.playSound(SoundTypes.ENTITY_CREEPER_HURT, location.position, 0.5, 1.0)
             }
         }
     }
@@ -94,14 +137,12 @@ data class AirScooterAbility(
         return null
     }
 
-    private fun displayScooter(context: AbilityContext) {
+    private fun displayScooter(phi: Double, context: AbilityContext): Double {
         val origin: Location<World> = context.require(StandardContext.origin)
 
-        val phi: Double = context.require(phi) + PHI_INCREMENT
-        context[AirScooterAbility.phi] = phi
-
-        val sinPhi = sin(phi)
-        val cosPhi = cos(phi)
+        val newPhi: Double = phi + PHI_INCREMENT
+        val sinPhi: Double = sin(newPhi)
+        val cosPhi: Double = cos(newPhi)
 
         var theta = 0.0
         while (theta <= TWO_PI) {
@@ -114,7 +155,7 @@ data class AirScooterAbility(
 
             theta += TENTH_PI
         }
-    }
 
-    object phi : AbilityContext.Key<Double>(id = "bending:phi", name = "Phi Context")
+        return newPhi
+    }
 }
