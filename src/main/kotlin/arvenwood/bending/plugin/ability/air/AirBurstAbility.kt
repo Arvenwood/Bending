@@ -1,15 +1,11 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.FALL
-import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
+import arvenwood.bending.api.ability.AbilityExecutionType.*
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.EffectService
-import arvenwood.bending.api.util.enumSetOf
-import arvenwood.bending.api.util.eyeLocation
-import arvenwood.bending.api.util.isSneaking
-import arvenwood.bending.api.util.spawnParticles
+import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.action.AirProjectile
 import arvenwood.bending.plugin.action.advanceAll
 import arvenwood.bending.plugin.util.forExclusive
@@ -37,14 +33,15 @@ data class AirBurstAbility(
     val fallThreshold: Double,
     val numSneakParticles: Int,
     val angleTheta: Double,
-    val anglePhi: Double
+    val anglePhi: Double,
+    val maxConeDegrees: Double = 30.0
 ) : Ability<AirBurstAbility> {
 
     override val type: AbilityType<AirBurstAbility> = AirBurstAbility
 
     companion object : AbstractAbilityType<AirBurstAbility>(
         element = Elements.Air,
-        executionTypes = enumSetOf(SNEAK, FALL),
+        executionTypes = enumSetOf(LEFT_CLICK, SNEAK, FALL),
         id = "bending:air_burst",
         name = "AirBurst"
     ) {
@@ -68,6 +65,8 @@ data class AirBurstAbility(
     private val particleEffect: ParticleEffect =
         EffectService.get().createParticle(Elements.Air, this.numSneakParticles, AirConstants.VECTOR_0_275)
 
+    private val maxConeRadians: Double = Math.toRadians(this.maxConeDegrees)
+
     override fun prepare(player: Player, context: AbilityContext) {
 
     }
@@ -75,35 +74,45 @@ data class AirBurstAbility(
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context.require(StandardContext.player)
 
-        if (executionType == FALL) {
-            if (context.require(StandardContext.fallDistance) >= this.fallThreshold) {
-                return this.burst(player, player.location, 75.0, 105.0)
-            } else {
-                return Success
+        when (executionType) {
+            FALL -> {
+                if (context.require(StandardContext.fallDistance) >= this.fallThreshold) {
+                    return this.burst(player, player.location, 75.0, 105.0)
+                } else {
+                    return Success
+                }
             }
-        }
-
-        var charged = false
-        val startTime: Long = System.currentTimeMillis()
-        abilityLoopUnsafe {
-            if (startTime + this.chargeTime <= System.currentTimeMillis()) {
-                charged = true
+            LEFT_CLICK -> {
+                return this.burst(player, player.location, 0.0, 180.0, player.headDirection.normalize(), this.maxConeRadians)
             }
+            else -> {
+                var charged = false
+                val startTime: Long = System.currentTimeMillis()
+                abilityLoopUnsafe {
+                    if (!charged && startTime + this.chargeTime <= System.currentTimeMillis()) {
+                        charged = true
+                    }
 
-            if (!player.isSneaking) {
-                return if (charged) this.burst(player, player.eyeLocation, 0.0, 180.0) else Success
-            }
+                    if (!player.isSneaking) {
+                        return if (charged) this.burst(player, player.eyeLocation, 0.0, 180.0) else Success
+                    }
 
-            if (charged) {
-                player.eyeLocation.spawnParticles(EffectService.get().createRandomParticle(Elements.Air, this.numSneakParticles))
-            } else {
-                player.eyeLocation.spawnParticles(AirConstants.EXTINGUISH_EFFECT)
+                    if (charged) {
+                        player.eyeLocation.spawnParticles(EffectService.get().createRandomParticle(Elements.Air, this.numSneakParticles))
+                    } else {
+                        player.eyeLocation.spawnParticles(AirConstants.EXTINGUISH_EFFECT)
+                    }
+                }
             }
         }
     }
 
-    private suspend fun burst(source: Player, origin: Location<World>, thetaMin: Double, thetaMax: Double): AbilityResult {
-        val projectiles: List<AirProjectile> = createProjectiles(origin, thetaMin, thetaMax)
+    private suspend fun burst(
+        source: Player, origin: Location<World>,
+        thetaMin: Double, thetaMax: Double,
+        targetDirection: Vector3d = Vector3d.ZERO, maxAngle: Double = 0.0
+    ): AbilityResult {
+        val projectiles: List<AirProjectile> = createProjectiles(origin, thetaMin, thetaMax, targetDirection, maxAngle)
 
         val affectedLocations = ArrayList<Location<World>>()
         val affectedEntities = ArrayList<Entity>()
@@ -120,7 +129,11 @@ data class AirBurstAbility(
         }
     }
 
-    private fun createProjectiles(origin: Location<World>, thetaMin: Double, thetaMax: Double): List<AirProjectile> {
+    private fun createProjectiles(
+        origin: Location<World>,
+        thetaMin: Double, thetaMax: Double,
+        targetDirection: Vector3d = Vector3d.ZERO, maxAngle: Double = 0.0
+    ): List<AirProjectile> {
         val result = ArrayList<AirProjectile>()
 
         forInclusive(from = thetaMin, to = thetaMax, step = this.angleTheta) { theta: Double ->
@@ -137,6 +150,10 @@ data class AirBurstAbility(
                 val z: Double = cosTheta
 
                 val direction = Vector3d(x, y, z)
+
+                if (maxAngle > 0 && direction.angle(targetDirection) > maxAngle) {
+                    return@forExclusive
+                }
 
                 result += AirProjectile(
                     origin = origin,

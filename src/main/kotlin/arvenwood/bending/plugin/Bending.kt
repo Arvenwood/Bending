@@ -124,7 +124,6 @@ class Bending @Inject constructor(
         Sponge.getServiceManager().setProvider<AbilityService>(this, SimpleAbilityService)
         Sponge.getServiceManager().setProvider<BenderService>(this, SimpleBenderService())
         Sponge.getServiceManager().setProvider<ProtectionService>(this, EmptyProtectionService)
-        Sponge.getServiceManager().setProvider<CooldownService>(this, SimpleCooldownService())
         Sponge.getServiceManager().setProvider<EffectService>(this, SimpleEffectService())
 
         this.abilityConfigService = SimpleAbilityConfigService()
@@ -264,6 +263,7 @@ class Bending @Inject constructor(
         event.register(AirScooterAbility)
         event.register(AirShieldAbility)
         event.register(AirSpoutAbility)
+        event.register(AirSwipeAbility)
         event.register(AirTornadoAbility)
 
         event.register(CombustionAbility)

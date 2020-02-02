@@ -3,7 +3,6 @@ package arvenwood.bending.plugin
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
 import arvenwood.bending.plugin.ability.SimpleAbilityContext
-import arvenwood.bending.api.service.CooldownService
 import arvenwood.bending.api.util.StackableBoolean
 import arvenwood.bending.api.util.selectedSlotIndex
 import arvenwood.bending.plugin.ability.SimpleAbilityJob
@@ -92,7 +91,7 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
 //        player.sendMessage(Text.of("No waiting ability."))
 
 
-        if (CooldownService.get().hasCooldown(player, ability.type)) {
+        if (this.hasCooldown(ability.type)) {
             // This ability is on cooldown.
             return
         }
@@ -129,7 +128,7 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
 
         if (ability.cooldown > 0) {
             // Set the cooldown. Don't spam your abilities!
-            CooldownService.get()[player, ability.type] = ability.cooldown
+            this.setCooldown(ability.type, ability.cooldown)
 
 //            player.sendMessage(Text.of("Cooldown set."))
         }
@@ -197,4 +196,23 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
 
         return found
     }
+
+    private val cooldownMap = IdentityHashMap<AbilityType<*>, Long>()
+
+    override fun hasCooldown(type: AbilityType<*>): Boolean {
+        val cooldown: Long = this.cooldownMap[type] ?: return false
+        val current: Long = System.currentTimeMillis()
+        if (cooldown <= current) {
+            this.cooldownMap.remove(type)
+            return false
+        }
+        return true
+    }
+
+    override fun setCooldown(type: AbilityType<*>, duration: Long) {
+        this.cooldownMap[type] = System.currentTimeMillis() + duration
+    }
+
+    override fun removeCooldown(type: AbilityType<*>): Long? =
+        this.cooldownMap.remove(type)
 }

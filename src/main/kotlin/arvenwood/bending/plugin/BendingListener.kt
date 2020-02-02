@@ -5,7 +5,6 @@ import arvenwood.bending.api.ability.Ability
 import arvenwood.bending.api.ability.AbilityExecutionType
 import arvenwood.bending.api.ability.AbilityType
 import arvenwood.bending.api.service.BenderService
-import arvenwood.bending.api.service.CooldownService
 import arvenwood.bending.api.util.get
 import arvenwood.bending.api.util.index
 import org.spongepowered.api.data.key.Keys
@@ -45,8 +44,9 @@ class BendingListener {
     }
 
     private fun displayAbility(player: Player) {
-        val type: AbilityType<Ability<*>> = BenderService.get()[player.uniqueId].selectedAbility?.type ?: return
-        val onCooldown: Boolean = CooldownService.get().hasCooldown(player, type)
+        val bender = BenderService.get()[player.uniqueId]
+        val type: AbilityType<Ability<*>> = bender.selectedAbility?.type ?: return
+        val onCooldown: Boolean = bender.hasCooldown(type)
 
         if (onCooldown) {
             player.sendMessage(ChatTypes.ACTION_BAR, Text.of(type.element.color, TextStyles.STRIKETHROUGH, type.name))
