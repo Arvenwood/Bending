@@ -12,6 +12,10 @@ sealed class AbilityResult {
         override fun toString(): String = "ErrorOnCooldown"
     }
 
+    object ErrorDurationLimited : Error() {
+        override fun toString(): String = "ErrorDurationLimited"
+    }
+
     object ErrorNoTarget : Error() {
         override fun toString(): String = "ErrorNoTarget"
     }

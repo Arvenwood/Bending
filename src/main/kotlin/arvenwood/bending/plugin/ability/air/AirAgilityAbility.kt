@@ -2,8 +2,7 @@ package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
-import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
-import arvenwood.bending.api.ability.AbilityResult.Success
+import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.isSprinting
@@ -25,7 +24,7 @@ data class AirAgilityAbility(
     companion object : AbstractAbilityType<AirAgilityAbility>(
         element = Elements.Air,
         executionTypes = enumSetOf(LEFT_CLICK),
-        id = "bending:air_ability",
+        id = "bending:air_agility",
         name = "AirAgility"
     ) {
         override fun load(node: ConfigurationNode): AirAgilityAbility = AirAgilityAbility(
@@ -55,16 +54,21 @@ data class AirAgilityAbility(
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context[StandardContext.player] ?: return ErrorNoTarget
 
-        abilityLoopUnsafe {
+        val startTime: Long = System.currentTimeMillis()
+        abilityLoopUnsafeQuarterTime {
             if (player.isRemoved) return Success
             if (!player.isSprinting) return Success
 
+            if (this.duration > 0 && startTime + this.duration <= System.currentTimeMillis()) {
+                return ErrorDurationLimited
+            }
+
             player.transform(Keys.POTION_EFFECTS) { effects: MutableList<PotionEffect> ->
                 if (effects.none { it.type == PotionEffectTypes.JUMP_BOOST && it.amplifier >= this.jumpPower }) {
-                    effects += effectJump
+                    effects += this.effectJump
                 }
                 if (effects.none { it.type == PotionEffectTypes.SPEED && it.amplifier >= this.speedPower }) {
-                    effects += effectSpeed
+                    effects += this.effectSpeed
                 }
 
                 effects

@@ -9,7 +9,19 @@ import org.spongepowered.api.entity.living.player.Player
  * Use with care, otherwise this can cause the main thread to halt.
  */
 suspend inline fun abilityLoopUnsafe(block: () -> Unit): Nothing {
-    val delayMilli = AbilityService.get().abilityDelayMilli
+    val delayMilli: Long = AbilityService.get().abilityDelayMilli
+    while (true) {
+        block()
+        delay(delayMilli)
+    }
+}
+
+/**
+ * Loops indefinitely until the block returns from the parent function or throws an exception.
+ * Use with care, otherwise this can cause the main thread to halt.
+ */
+suspend inline fun abilityLoopUnsafeQuarterTime(block: () -> Unit): Nothing {
+    val delayMilli: Long = AbilityService.get().abilityDelayMilli * 4
     while (true) {
         block()
         delay(delayMilli)
