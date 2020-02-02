@@ -4,6 +4,8 @@ import arvenwood.bending.api.util.identityHashSetOf
 import com.flowpowered.math.vector.Vector3d
 import org.spongepowered.api.block.BlockType
 import org.spongepowered.api.block.BlockTypes
+import org.spongepowered.api.effect.particle.ParticleEffect
+import org.spongepowered.api.effect.particle.ParticleTypes
 
 object AirConstants {
 
@@ -28,4 +30,7 @@ object AirConstants {
 
     @JvmField
     val VECTOR_0_275: Vector3d = Vector3d(0.275, 0.275, 0.275)
+
+    @JvmField
+    val EXTINGUISH_EFFECT: ParticleEffect = ParticleEffect.builder().type(ParticleTypes.FIRE_SMOKE).build()
 }

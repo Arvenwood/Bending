@@ -1,14 +1,15 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
-import arvenwood.bending.api.ability.AbilityExecutionType.Sneak
+import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
+import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.ErrorDied
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.currentLocation
 import arvenwood.bending.api.ability.StandardContext.direction
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.EffectService
+import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.isNearDiagonalWall
 import arvenwood.bending.api.util.spawnParticles
 import com.flowpowered.math.vector.Vector3d
@@ -36,13 +37,10 @@ data class AirSuctionAbility(
 
     companion object : AbstractAbilityType<AirSuctionAbility>(
         element = Elements.Air,
-        executionTypes = setOf(LeftClick::class, Sneak::class),
+        executionTypes = enumSetOf(LEFT_CLICK, SNEAK),
         id = "bending:air_suction",
         name = "AirSuction"
     ) {
-        override val default: Ability<AirSuctionAbility>
-            get() = TODO("not implemented")
-
         override fun load(node: ConfigurationNode): AirSuctionAbility {
             TODO("not implemented")
         }

@@ -1,10 +1,11 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
+import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.headDirection
 import arvenwood.bending.api.util.isWater
 import arvenwood.bending.api.util.spawnParticles
@@ -29,17 +30,10 @@ data class FireJetAbility(
 
     companion object : AbstractAbilityType<FireJetAbility>(
         element = Elements.Fire,
-        executionTypes = setOf(LeftClick::class),
+        executionTypes = enumSetOf(LEFT_CLICK),
         id = "bending:fire_jet",
         name = "FireJet"
     ) {
-        override val default: Ability<FireJetAbility> = FireJetAbility(
-            cooldown = 7000L,
-            duration = 2000L,
-            speed = 0.8,
-            showGliding = false
-        )
-
         override fun load(node: ConfigurationNode): FireJetAbility = FireJetAbility(
             cooldown = node.getNode("cooldown").long,
             duration = node.getNode("duration").long,

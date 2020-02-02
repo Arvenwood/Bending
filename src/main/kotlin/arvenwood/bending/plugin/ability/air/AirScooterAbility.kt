@@ -1,7 +1,7 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
+import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.BenderService
@@ -34,13 +34,10 @@ data class AirScooterAbility(
 
     companion object : AbstractAbilityType<AirScooterAbility>(
         element = Elements.Air,
-        executionTypes = setOf(LeftClick::class),
+        executionTypes = enumSetOf(LEFT_CLICK),
         id = "bending:air_scooter",
         name = "AirScooter"
     ) {
-        override val default: Ability<AirScooterAbility>
-            get() = TODO("not implemented")
-
         override fun load(node: ConfigurationNode): AirScooterAbility = AirScooterAbility(
             cooldown = node.getNode("cooldown").long,
             duration = node.getNode("duration").long,

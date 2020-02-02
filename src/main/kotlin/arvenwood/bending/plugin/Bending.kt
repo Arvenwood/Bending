@@ -45,6 +45,7 @@ import org.spongepowered.api.config.ConfigDir
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.Listener
 import org.spongepowered.api.event.game.GameRegistryEvent
+import org.spongepowered.api.event.game.GameReloadEvent
 import org.spongepowered.api.event.game.state.*
 import org.spongepowered.api.plugin.Dependency
 import org.spongepowered.api.plugin.Plugin
@@ -199,10 +200,14 @@ class Bending @Inject constructor(
 
     @Listener
     fun onPostInit(event: GamePostInitializationEvent) {
-        registerPlaceholders()
+        this.registerPlaceholders()
 
         this.logger.info("Loading ability configs...")
 
+        this.loadConfigs()
+    }
+
+    private fun loadConfigs() {
         val configs: List<AbilityConfig> = FolderAbilityConfigLoader(this.abilitiesDir).load()
         this.logger.info("Loaded ability configs: " + configs.distinctBy { it.name }.joinToString { it.name })
         AbilityConfigService.get().registerAll(configs)
@@ -232,6 +237,13 @@ class Bending @Inject constructor(
     }
 
     @Listener
+    fun onReload(event: GameReloadEvent) {
+        this.logger.info("Reloading plugin...")
+
+        this.loadConfigs()
+    }
+
+    @Listener
     fun onRegisterElement(event: GameRegistryEvent.Register<Element>) {
         // Register the classical elements.
 
@@ -247,6 +259,7 @@ class Bending @Inject constructor(
 
         event.register(AirAgilityAbility)
         event.register(AirBlastAbility)
+        event.register(AirBurstAbility)
         event.register(AirJumpAbility)
         event.register(AirScooterAbility)
         event.register(AirShieldAbility)

@@ -1,7 +1,7 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
+import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.currentLocation
@@ -43,23 +43,10 @@ data class FireBlastAbility(
 
     companion object : AbstractAbilityType<FireBlastAbility>(
         element = Elements.Fire,
-        executionTypes = setOf(LeftClick::class),
+        executionTypes = enumSetOf(LEFT_CLICK),
         id = "bending:fire_blast",
         name = "FireBlast"
     ) {
-        override val default: Ability<FireBlastAbility> = FireBlastAbility(
-            cooldown = 1500L,
-            damage = 3.0,
-            fireTicks = 0,
-            knockback = 0.3,
-            radius = 1.5,
-            range = 20.0,
-            speed = 20.0,
-            showParticles = true,
-            flameRadius = 0.275,
-            smokeRadius = 0.3
-        )
-
         override fun load(node: ConfigurationNode): FireBlastAbility = FireBlastAbility(
             cooldown = node.getNode("cooldown").long,
             damage = node.getNode("damage").double,

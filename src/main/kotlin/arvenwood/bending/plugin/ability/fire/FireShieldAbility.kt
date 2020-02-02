@@ -1,11 +1,12 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.Sneak
+import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.ProtectionService
+import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.getNearbyEntities
 import arvenwood.bending.api.util.getNearbyLocations
 import arvenwood.bending.api.util.spawnParticles
@@ -38,17 +39,10 @@ data class FireShieldAbility(
 
     companion object : AbstractAbilityType<FireShieldAbility>(
         element = Elements.Fire,
-        executionTypes = setOf(Sneak::class),
+        executionTypes = enumSetOf(SNEAK),
         id = "bending:fire_shield",
         name = "FireShield"
     ) {
-        override val default: Ability<FireShieldAbility> = FireShieldAbility(
-            cooldown = 0L,
-            duration = 0L,
-            radius = 5.0,
-            fireTicks = 2
-        )
-
         override fun load(node: ConfigurationNode): FireShieldAbility = FireShieldAbility(
             cooldown = node.getNode("cooldown").long,
             duration = node.getNode("duration").long,

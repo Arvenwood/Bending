@@ -1,8 +1,9 @@
 package arvenwood.bending.plugin.ability.earth
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
+import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.util.enumSetOf
 import ninja.leaping.configurate.ConfigurationNode
 
 data class EarthBlastAbility(
@@ -21,13 +22,10 @@ data class EarthBlastAbility(
 
     companion object : AbstractAbilityType<EarthBlastAbility>(
         element = Elements.Earth,
-        executionTypes = setOf(LeftClick::class),
+        executionTypes = enumSetOf(LEFT_CLICK),
         id = "bending:earth_blast",
         name = "EarthBlast"
     ) {
-        override val default: Ability<EarthBlastAbility>
-            get() = TODO("not implemented")
-
         override fun load(node: ConfigurationNode): EarthBlastAbility {
             TODO("not implemented")
         }

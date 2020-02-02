@@ -3,7 +3,6 @@ package arvenwood.bending.api.util
 import com.flowpowered.math.imaginary.Quaterniond
 import com.flowpowered.math.vector.Vector3d
 import org.spongepowered.api.util.Direction
-import java.util.*
 import kotlin.math.acos
 import kotlin.math.cos
 import kotlin.math.sin
@@ -75,8 +74,44 @@ fun Vector3d.getOrthogonal(degrees: Double, length: Double): Vector3d {
     return this.rotateAround(orthogonal, degrees)
 }
 
+fun Vector3d.getOrthogonal(direction: Vector3d): Vector3d =
+    this.getOrthogonal(Math.toDegrees(direction.angle(this)), 1.0)
+
 fun Vector3d.rotateAround(other: Vector3d, degrees: Double): Vector3d {
     val angle: Double = Math.toRadians(degrees)
     val thirdAxis: Vector3d = this.cross(other).normalize().mul(other.length())
     return other.mul(cos(angle)).add(thirdAxis.mul(sin(angle)))
+}
+
+fun Vector3d.rotateAroundAxis(direction: Vector3d): Vector3d =
+    this.rotateAroundAxisX(direction.x).rotateAroundAxisY(-direction.y).rotateAroundAxisZ(direction.z)
+
+fun Vector3d.rotateAroundAxisX(angle: Double): Vector3d {
+    val sin: Double = sin(angle)
+    val cos: Double = cos(angle)
+    return Vector3d(
+        this.x,
+        this.y * cos - this.z * sin,
+        this.y * sin + this.z * cos
+    )
+}
+
+fun Vector3d.rotateAroundAxisY(angle: Double): Vector3d {
+    val sin: Double = sin(angle)
+    val cos: Double = cos(angle)
+    return Vector3d(
+        this.x * cos + this.z * sin,
+        this.y,
+        this.x * -sin + this.z * cos
+    )
+}
+
+fun Vector3d.rotateAroundAxisZ(angle: Double): Vector3d {
+    val sin: Double = sin(angle)
+    val cos: Double = cos(angle)
+    return Vector3d(
+        this.x * cos - this.y * sin,
+        this.x * sin + this.y * cos,
+        this.z
+    )
 }

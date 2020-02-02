@@ -1,6 +1,6 @@
 package arvenwood.bending.plugin.util
 
-inline fun whileInclusive(from: Double, to: Double, step: Double, block: (Double) -> Unit) {
+inline fun forInclusive(from: Double, to: Double, step: Double, block: (Double) -> Unit) {
     var current: Double = from
     while (current <= to) {
         block(current)
@@ -8,7 +8,7 @@ inline fun whileInclusive(from: Double, to: Double, step: Double, block: (Double
     }
 }
 
-inline fun whileExclusive(from: Double, to: Double, step: Double, block: (Double) -> Unit) {
+inline fun forExclusive(from: Double, to: Double, step: Double, block: (Double) -> Unit) {
     var current: Double = from
     while (current < to) {
         block(current)

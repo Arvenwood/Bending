@@ -1,7 +1,7 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.Sneak
+import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.player
@@ -42,21 +42,10 @@ data class AirTornadoAbility(
 
     companion object : AbstractAbilityType<AirTornadoAbility>(
         element = Elements.Air,
-        executionTypes = setOf(Sneak::class),
+        executionTypes = enumSetOf(SNEAK),
         id = "bending:air_tornado",
         name = "AirTornado"
     ) {
-        override val default: Ability<AirTornadoAbility> = AirTornadoAbility(
-            cooldown = 10000L,
-            duration = 10000L,
-            height = 20.0,
-            pushFactor = 1.0,
-            radius = 10.0,
-            range = 25.0,
-            speed = 1.0,
-            particles = 4
-        )
-
         override fun load(node: ConfigurationNode): AirTornadoAbility = AirTornadoAbility(
             cooldown = node.getNode("cooldown").long,
             duration = node.getNode("duration").long,

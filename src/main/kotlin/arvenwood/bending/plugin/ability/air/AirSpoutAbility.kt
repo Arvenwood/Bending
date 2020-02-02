@@ -1,7 +1,7 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
+import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
@@ -32,17 +32,10 @@ data class AirSpoutAbility(
 
     companion object : AbstractAbilityType<AirSpoutAbility>(
         element = Elements.Air,
-        executionTypes = setOf(LeftClick::class),
+        executionTypes = enumSetOf(LEFT_CLICK),
         id = "bending:air_spout",
         name = "AirSpout"
     ) {
-        override val default: Ability<AirSpoutAbility> = AirSpoutAbility(
-            cooldown = 10000L,
-            duration = 10000L,
-            interval = 100L,
-            height = 16.0
-        )
-
         override fun load(node: ConfigurationNode): AirSpoutAbility = AirSpoutAbility(
             cooldown = node.getNode("cooldown").long,
             duration = node.getNode("duration").long,
@@ -67,7 +60,7 @@ data class AirSpoutAbility(
         context[angle] = 0
 
         val startTime: Long = System.currentTimeMillis()
-        val defer: Job = BenderService.get()[player.uniqueId].deferExecution(AirSpoutAbility, LeftClick)
+        val defer: Job = BenderService.get()[player.uniqueId].deferExecution(AirSpoutAbility, LEFT_CLICK)
         abilityLoopUnsafe {
             if (player.isRemoved) {
                 return Success

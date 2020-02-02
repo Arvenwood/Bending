@@ -5,7 +5,7 @@ import kotlin.reflect.KClass
 
 abstract class AbstractAbilityType<out T : Ability<T>>(
     override val element: Element,
-    override val executionTypes: Set<KClass<out AbilityExecutionType>>,
+    override val executionTypes: Set<AbilityExecutionType>,
     private val id: String,
     private val name: String = id
 ) : AbilityType<T> {

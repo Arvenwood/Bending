@@ -1,7 +1,7 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.Sneak
+import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
@@ -34,20 +34,10 @@ data class CombustionAbility(
 
     companion object : AbstractAbilityType<CombustionAbility>(
         element = Elements.Fire,
-        executionTypes = setOf(Sneak::class),
+        executionTypes = enumSetOf(SNEAK),
         id = "bending:combustion",
         name = "Combustion"
     ) {
-        override val default: Ability<CombustionAbility> = CombustionAbility(
-            cooldown = 10000L,
-            canBreakBlocks = false,
-            damage = 4.0,
-            power = 1.0f,
-            radius = 4.0,
-            range = 35.0,
-            speed = 25.0
-        )
-
         override fun load(node: ConfigurationNode): CombustionAbility = CombustionAbility(
             cooldown = node.getNode("cooldown").long,
             canBreakBlocks = node.getNode("canBreakBlocks").boolean,

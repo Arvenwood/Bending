@@ -47,4 +47,6 @@ object StandardContext {
     object height : AbilityContext.Key<Double>("bending:height", "Height Context")
 
     object radius : AbilityContext.Key<Double>("bending:radius", "Radius Context")
+
+    object fallDistance: AbilityContext.Key<Float>("bending:fall_distance", "Fall Distance Context")
 }

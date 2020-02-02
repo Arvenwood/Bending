@@ -1,7 +1,7 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.Sneak
+import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
@@ -38,20 +38,10 @@ data class AirShieldAbility(
 
     companion object : AbstractAbilityType<AirShieldAbility>(
         element = Elements.Air,
-        executionTypes = setOf(Sneak::class),
+        executionTypes = enumSetOf(SNEAK),
         id = "bending:air_shield",
         name = "AirShield"
     ) {
-        override val default: Ability<AirShieldAbility> = AirShieldAbility(
-            cooldown = 0L,
-            duration = 0L,
-            speed = 10.0,
-            maxRadius = 7.0,
-            initialRadius = 1.0,
-            numStreams = 5,
-            particles = 5
-        )
-
         override fun load(node: ConfigurationNode): AirShieldAbility = AirShieldAbility(
             cooldown = node.getNode("cooldown").long,
             duration = node.getNode("duration").long,
@@ -131,7 +121,7 @@ data class AirShieldAbility(
         for (test: Location<World> in origin.getNearbyLocations(radius)) {
             if (test.blockType == BlockTypes.FIRE) {
                 test.blockType = BlockTypes.AIR
-                test.spawnParticles(AirBlastAbility.EXTINGUISH_EFFECT)
+                test.spawnParticles(AirConstants.EXTINGUISH_EFFECT)
             }
         }
 

@@ -1,6 +1,6 @@
 package arvenwood.bending.api.ability
 
-interface AbilityExecution {
+interface AbilityJob {
 
     val ability: Ability<*>
 

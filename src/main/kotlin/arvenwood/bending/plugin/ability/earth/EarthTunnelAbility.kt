@@ -1,7 +1,7 @@
 package arvenwood.bending.plugin.ability.earth
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.Sneak
+import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.ErrorProtected
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
@@ -36,13 +36,10 @@ data class EarthTunnelAbility(
 
     companion object : AbstractAbilityType<EarthTunnelAbility>(
         element = Elements.Earth,
-        executionTypes = setOf(Sneak::class),
+        executionTypes = enumSetOf(SNEAK),
         id = "bending:earth_tunnel",
         name = "EarthTunnel"
     ) {
-        override val default: Ability<EarthTunnelAbility>
-            get() = TODO("not implemented")
-
         override fun load(node: ConfigurationNode): EarthTunnelAbility = EarthTunnelAbility(
             cooldown = node.getNode("cooldown").long,
             revertTime = node.getNode("revertTime").long,

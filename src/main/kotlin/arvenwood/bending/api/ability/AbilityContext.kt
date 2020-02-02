@@ -26,8 +26,10 @@ interface AbilityContext : CoroutineContext.Element {
     operator fun contains(key: Key<Any>): Boolean
 
     abstract class Key<out E>(private val id: String, private val name: String = id) : CatalogType {
-        override fun getId(): String = id
-        override fun getName(): String = name
+        override fun getId(): String = this.id
+        override fun getName(): String = this.name
+
+        override fun toString(): String = this.name
     }
 }
 

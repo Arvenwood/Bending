@@ -1,7 +1,7 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
+import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.direction
@@ -41,21 +41,10 @@ data class FireWallAbility(
 
     companion object : AbstractAbilityType<FireWallAbility>(
         element = Elements.Fire,
-        executionTypes = setOf(LeftClick::class),
+        executionTypes = enumSetOf(LEFT_CLICK),
         id = "bending:fire_wall",
         name = "FireWall"
     ) {
-        override val default: Ability<FireWallAbility> = FireWallAbility(
-            cooldown = 11000L,
-            duration = 5000L,
-            displayInterval = 250L,
-            damage = 1.0,
-            damageInterval = 500L,
-            fireTicks = 0,
-            width = 4,
-            height = 4
-        )
-
         override fun load(node: ConfigurationNode): FireWallAbility = FireWallAbility(
             cooldown = node.getNode("cooldown").long,
             duration = node.getNode("duration").long,

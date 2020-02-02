@@ -1,12 +1,12 @@
 package arvenwood.bending.api
 
 import arvenwood.bending.api.ability.Ability
-import arvenwood.bending.api.ability.AbilityExecution
+import arvenwood.bending.api.ability.AbilityJob
 import arvenwood.bending.api.ability.AbilityExecutionType
 import arvenwood.bending.api.ability.AbilityType
 import arvenwood.bending.api.util.StackableBoolean
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlin.reflect.KClass
 
 interface Bender {
 
@@ -22,7 +22,7 @@ interface Bender {
 
     fun clearEquipped()
 
-    val runningAbilities: Collection<AbilityExecution>
+    val runningAbilities: Collection<AbilityJob>
 
     fun execute(ability: Ability<*>, executionType: AbilityExecutionType)
 

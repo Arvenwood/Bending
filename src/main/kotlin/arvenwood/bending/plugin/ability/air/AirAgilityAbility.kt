@@ -1,10 +1,11 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
+import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.isSprinting
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
@@ -23,17 +24,10 @@ data class AirAgilityAbility(
 
     companion object : AbstractAbilityType<AirAgilityAbility>(
         element = Elements.Air,
-        executionTypes = setOf(LeftClick::class),
+        executionTypes = enumSetOf(LEFT_CLICK),
         id = "bending:air_ability",
         name = "AirAgility"
     ) {
-        override val default: Ability<AirAgilityAbility> = AirAgilityAbility(
-            cooldown = 10000L,
-            duration = 10000L,
-            jumpPower = 3,
-            speedPower = 2
-        )
-
         override fun load(node: ConfigurationNode): AirAgilityAbility = AirAgilityAbility(
             cooldown = node.getNode("cooldown").long,
             duration = node.getNode("duration").long,

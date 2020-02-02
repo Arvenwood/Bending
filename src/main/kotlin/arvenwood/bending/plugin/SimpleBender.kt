@@ -6,12 +6,14 @@ import arvenwood.bending.plugin.ability.SimpleAbilityContext
 import arvenwood.bending.api.service.CooldownService
 import arvenwood.bending.api.util.StackableBoolean
 import arvenwood.bending.api.util.selectedSlotIndex
-import arvenwood.bending.plugin.ability.SimpleAbilityExecution
+import arvenwood.bending.plugin.ability.SimpleAbilityJob
 import com.google.common.collect.Table
 import com.google.common.collect.Tables
 import kotlinx.coroutines.*
 import org.spongepowered.api.Sponge
+import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.entity.living.player.Player
+import org.spongepowered.api.text.Text
 import java.util.*
 import kotlin.coroutines.*
 
@@ -21,10 +23,12 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
 
     private val equipped: Array<Ability<*>?> = arrayOfNulls(size = 9)
 
-    private val runningMap = IdentityHashMap<Job, SimpleAbilityExecution>()
+    private val runningMap = IdentityHashMap<Job, SimpleAbilityJob>()
 
     private val awaitingMap: Table<AbilityType<*>, AbilityExecutionType, Continuation<Unit>> =
-        Tables.newCustomTable<AbilityType<*>, AbilityExecutionType, Continuation<Unit>>(IdentityHashMap()) { HashMap() }
+        Tables.newCustomTable<AbilityType<*>, AbilityExecutionType, Continuation<Unit>>(IdentityHashMap()) {
+            EnumMap(AbilityExecutionType::class.java)
+        }
 
     override var flight = StackableBoolean(0)
 
@@ -64,15 +68,19 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
         }
     }
 
-    override val runningAbilities: Collection<AbilityExecution> get() = runningMap.values
+    override val runningAbilities: Collection<AbilityJob> get() = runningMap.values
 
     private val exceptionHandler: CoroutineExceptionHandler = CoroutineExceptionHandler(this::cancelAbility)
 
     override fun execute(ability: Ability<*>, executionType: AbilityExecutionType) {
-        if (executionType::class !in ability.type.executionTypes) {
+        val player: Player = this.player
+
+        if (executionType !in ability.type.executionTypes) {
             // This ability is executed differently.
             return
         }
+
+//        player.sendMessage(Text.of("Executing ${ability.type.name} by $executionType"))
 
         val cont: Continuation<Unit>? = this.awaitingMap.remove(ability.type, executionType)
         if (cont != null) {
@@ -81,33 +89,52 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
             return
         }
 
-        if (CooldownService.get().hasCooldown(this.player, ability.type)) {
+//        player.sendMessage(Text.of("No waiting ability."))
+
+
+        if (CooldownService.get().hasCooldown(player, ability.type)) {
             // This ability is on cooldown.
             return
         }
+
+//        player.sendMessage(Text.of("No cooldown."))
+
 
         val context = SimpleAbilityContext()
 
         // Set how the ability was initiated.
         context[StandardContext.executionType] = executionType
 
+        if (executionType == AbilityExecutionType.FALL) {
+            context[StandardContext.fallDistance] = player.getOrElse(Keys.FALL_DISTANCE, 0F)
+            player.sendMessage(Text.of("Set fall distance."))
+        }
+
         // Pre-load some values into the context.
-        context[StandardContext.player] = this.player
-        ability.prepare(this.player, context)
+        context[StandardContext.player] = player
+        ability.prepare(player, context)
+
+//        player.sendMessage(Text.of("Prepared."))
 
         if (!ability.validate(context)) {
             // Should we try to run the ability?
             return
         }
 
+//        player.sendMessage(Text.of("Validated."))
+
         ability.preempt(context, executionType)
+
+//        player.sendMessage(Text.of("Preempted."))
 
         if (ability.cooldown > 0) {
             // Set the cooldown. Don't spam your abilities!
-            CooldownService.get()[this.player, ability.type] = ability.cooldown
+            CooldownService.get()[player, ability.type] = ability.cooldown
+
+//            player.sendMessage(Text.of("Cooldown set."))
         }
 
-        lateinit var execution: SimpleAbilityExecution
+        lateinit var execution: SimpleAbilityJob
         lateinit var job: Job
 
         val coroutine: CoroutineContext =
@@ -118,9 +145,11 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
             ability.cleanup(context)
             this@SimpleBender.runningMap.remove(job)
         }
-        execution = SimpleAbilityExecution(job)
+        execution = SimpleAbilityJob(job)
 
         this.runningMap[job] = execution
+
+//        player.sendMessage(Text.of("Ability executed."))
     }
 
     private fun cancelAbility(context: CoroutineContext, throwable: Throwable) {

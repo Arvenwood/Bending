@@ -8,9 +8,7 @@ import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.service.CooldownService
 import arvenwood.bending.api.util.get
 import arvenwood.bending.api.util.index
-import arvenwood.bending.plugin.util.print
 import org.spongepowered.api.data.key.Keys
-import org.spongepowered.api.entity.Transform
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.Listener
 import org.spongepowered.api.event.block.InteractBlockEvent
@@ -21,16 +19,13 @@ import org.spongepowered.api.event.entity.DamageEntityEvent
 import org.spongepowered.api.event.entity.InteractEntityEvent
 import org.spongepowered.api.event.entity.MoveEntityEvent
 import org.spongepowered.api.event.filter.Getter
-import org.spongepowered.api.event.filter.cause.First
 import org.spongepowered.api.event.filter.cause.Root
 import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent
 import org.spongepowered.api.event.network.ClientConnectionEvent
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.chat.ChatTypes
 import org.spongepowered.api.text.format.TextStyles
-import org.spongepowered.api.util.Direction
 import org.spongepowered.api.util.Direction.DOWN
-import org.spongepowered.api.world.World
 
 class BendingListener {
 
@@ -64,14 +59,14 @@ class BendingListener {
     fun onLeftClick(event: InteractBlockEvent.Primary.MainHand, @Root player: Player) {
         val bender: Bender = BenderService.get()[player.uniqueId]
         val ability: Ability<*> = bender.selectedAbility ?: return
-        bender.execute(ability, AbilityExecutionType.LeftClick)
+        bender.execute(ability, AbilityExecutionType.LEFT_CLICK)
     }
 
     @Listener
     fun onRightClick(event: InteractEntityEvent.Secondary.MainHand, @Root player: Player) {
         val bender: Bender = BenderService.get()[player.uniqueId]
         val ability: Ability<*> = bender.selectedAbility ?: return
-        bender.execute(ability, AbilityExecutionType.RightClick)
+        bender.execute(ability, AbilityExecutionType.RIGHT_CLICK)
     }
 
     @Listener
@@ -79,7 +74,12 @@ class BendingListener {
         if (event.endResult[Keys.IS_SNEAKING] == true) {
             val bender: Bender = BenderService.get()[player.uniqueId]
             val ability: Ability<*> = bender.selectedAbility ?: return
-            bender.execute(ability, AbilityExecutionType.Sneak)
+            bender.execute(ability, AbilityExecutionType.SNEAK)
+        }
+        if (event.endResult[Keys.IS_SPRINTING] == true) {
+            val bender: Bender = BenderService.get()[player.uniqueId]
+            val ability: Ability<*> = bender.selectedAbility ?: return
+            bender.execute(ability, AbilityExecutionType.SPRINT)
         }
     }
 
@@ -97,7 +97,7 @@ class BendingListener {
 
         val bender: Bender = BenderService.get()[player.uniqueId]
         val ability: Ability<*> = bender.selectedAbility ?: return
-        bender.execute(ability, AbilityExecutionType.Jump)
+        bender.execute(ability, AbilityExecutionType.JUMP)
     }
 
     @Listener
@@ -112,9 +112,10 @@ class BendingListener {
             return
         }
 
+        player.sendMessage(Text.of("Fell ${player.getOrElse(Keys.FALL_DISTANCE, -1.0F)} blocks"))
+
         val bender: Bender = BenderService.get()[player.uniqueId]
         val ability: Ability<*> = bender.selectedAbility ?: return
-        val executionType: AbilityExecutionType = AbilityExecutionType.Fall(event.finalDamage)
-        bender.execute(ability, executionType)
+        bender.execute(ability, AbilityExecutionType.FALL)
     }
 }
