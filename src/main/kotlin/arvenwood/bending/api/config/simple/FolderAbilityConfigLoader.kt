@@ -8,6 +8,10 @@ import kotlin.streams.asSequence
 
 class FolderAbilityConfigLoader(private val folder: Path) : AbilityConfigLoader {
     init {
+        if (Files.notExists(this.folder)) {
+            Files.createDirectories(this.folder)
+        }
+
         require(Files.isDirectory(this.folder)) { "must be a folder: $folder" }
     }
 

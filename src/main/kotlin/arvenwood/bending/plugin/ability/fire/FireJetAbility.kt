@@ -1,10 +1,10 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
+import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
-import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.headDirection
 import arvenwood.bending.api.util.isWater
 import arvenwood.bending.api.util.spawnParticles
@@ -29,7 +29,7 @@ data class FireJetAbility(
 
     companion object : AbstractAbilityType<FireJetAbility>(
         element = Elements.Fire,
-        executionTypes = enumSetOf(AbilityExecutionType.LEFT_CLICK),
+        executionTypes = setOf(LeftClick::class),
         id = "bending:fire_jet",
         name = "FireJet"
     ) {

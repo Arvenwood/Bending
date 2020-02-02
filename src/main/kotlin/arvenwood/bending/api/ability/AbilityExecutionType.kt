@@ -2,12 +2,19 @@ package arvenwood.bending.api.ability
 
 import kotlin.coroutines.CoroutineContext
 
-enum class AbilityExecutionType : CoroutineContext.Element {
-    LEFT_CLICK,
-    RIGHT_CLICK,
-    JUMP,
-    SNEAK,
-    SPRINT;
+sealed class AbilityExecutionType : CoroutineContext.Element {
+
+    object LeftClick : AbilityExecutionType()
+
+    object RightClick : AbilityExecutionType()
+
+    object Jump : AbilityExecutionType()
+
+    object Sneak : AbilityExecutionType()
+
+    object Sprint : AbilityExecutionType()
+
+    data class Fall(val damage: Double) : AbilityExecutionType()
 
     override val key: CoroutineContext.Key<*> get() = AbilityExecutionType
 

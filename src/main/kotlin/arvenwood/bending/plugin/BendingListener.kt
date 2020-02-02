@@ -8,18 +8,29 @@ import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.service.CooldownService
 import arvenwood.bending.api.util.get
 import arvenwood.bending.api.util.index
+import arvenwood.bending.plugin.util.print
 import org.spongepowered.api.data.key.Keys
+import org.spongepowered.api.entity.Transform
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.Listener
 import org.spongepowered.api.event.block.InteractBlockEvent
+import org.spongepowered.api.event.cause.entity.damage.DamageTypes
+import org.spongepowered.api.event.cause.entity.damage.source.DamageSource
 import org.spongepowered.api.event.data.ChangeDataHolderEvent
+import org.spongepowered.api.event.entity.DamageEntityEvent
 import org.spongepowered.api.event.entity.InteractEntityEvent
+import org.spongepowered.api.event.entity.MoveEntityEvent
+import org.spongepowered.api.event.filter.Getter
 import org.spongepowered.api.event.filter.cause.First
+import org.spongepowered.api.event.filter.cause.Root
 import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent
 import org.spongepowered.api.event.network.ClientConnectionEvent
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.chat.ChatTypes
 import org.spongepowered.api.text.format.TextStyles
+import org.spongepowered.api.util.Direction
+import org.spongepowered.api.util.Direction.DOWN
+import org.spongepowered.api.world.World
 
 class BendingListener {
 
@@ -29,7 +40,7 @@ class BendingListener {
     }
 
     @Listener
-    fun onChangeSlot(event: ChangeInventoryEvent.Held, @First player: Player) {
+    fun onChangeSlot(event: ChangeInventoryEvent.Held, @Root player: Player) {
         val oldSlot: Int = event.originalSlot.index
         val newSlot: Int = event.finalSlot.index
 
@@ -50,25 +61,60 @@ class BendingListener {
     }
 
     @Listener
-    fun onLeftClick(event: InteractBlockEvent.Primary.MainHand, @First player: Player) {
+    fun onLeftClick(event: InteractBlockEvent.Primary.MainHand, @Root player: Player) {
         val bender: Bender = BenderService.get()[player.uniqueId]
         val ability: Ability<*> = bender.selectedAbility ?: return
-        bender.execute(ability, AbilityExecutionType.LEFT_CLICK)
+        bender.execute(ability, AbilityExecutionType.LeftClick)
     }
 
     @Listener
-    fun onRightClick(event: InteractEntityEvent.Secondary.MainHand, @First player: Player) {
+    fun onRightClick(event: InteractEntityEvent.Secondary.MainHand, @Root player: Player) {
         val bender: Bender = BenderService.get()[player.uniqueId]
         val ability: Ability<*> = bender.selectedAbility ?: return
-        bender.execute(ability, AbilityExecutionType.RIGHT_CLICK)
+        bender.execute(ability, AbilityExecutionType.RightClick)
     }
 
     @Listener
-    fun onSneak(event: ChangeDataHolderEvent.ValueChange, @First player: Player) {
+    fun onSneak(event: ChangeDataHolderEvent.ValueChange, @Root player: Player) {
         if (event.endResult[Keys.IS_SNEAKING] == true) {
             val bender: Bender = BenderService.get()[player.uniqueId]
             val ability: Ability<*> = bender.selectedAbility ?: return
-            bender.execute(ability, AbilityExecutionType.SNEAK)
+            bender.execute(ability, AbilityExecutionType.Sneak)
         }
+    }
+
+    @Listener
+    fun onJump(event: MoveEntityEvent, @Root player: Player) {
+        if (event.fromTransform.position.y >= event.toTransform.position.y) {
+            // Didn't go up.
+            return
+        }
+
+        if (!event.fromTransform.location.getRelative(DOWN).hasBlock()) {
+            // Block below them was air.
+            return
+        }
+
+        val bender: Bender = BenderService.get()[player.uniqueId]
+        val ability: Ability<*> = bender.selectedAbility ?: return
+        bender.execute(ability, AbilityExecutionType.Jump)
+    }
+
+    @Listener
+    fun onFall(event: DamageEntityEvent, @Root source: DamageSource, @Getter("getTargetEntity") player: Player) {
+        if (event.willCauseDeath()) {
+            // Don't activate abilities on death.
+            return
+        }
+
+        if (source.type != DamageTypes.FALL) {
+            // Ignore any damage that isn't from falling.
+            return
+        }
+
+        val bender: Bender = BenderService.get()[player.uniqueId]
+        val ability: Ability<*> = bender.selectedAbility ?: return
+        val executionType: AbilityExecutionType = AbilityExecutionType.Fall(event.finalDamage)
+        bender.execute(ability, executionType)
     }
 }

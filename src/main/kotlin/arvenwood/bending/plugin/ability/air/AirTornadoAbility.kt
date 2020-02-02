@@ -1,6 +1,7 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
+import arvenwood.bending.api.ability.AbilityExecutionType.Sneak
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.player
@@ -41,7 +42,7 @@ data class AirTornadoAbility(
 
     companion object : AbstractAbilityType<AirTornadoAbility>(
         element = Elements.Air,
-        executionTypes = enumSetOf(AbilityExecutionType.SNEAK),
+        executionTypes = setOf(Sneak::class),
         id = "bending:air_tornado",
         name = "AirTornado"
     ) {

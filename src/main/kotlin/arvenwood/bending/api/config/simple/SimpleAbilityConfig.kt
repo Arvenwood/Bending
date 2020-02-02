@@ -11,5 +11,7 @@ data class SimpleAbilityConfig(
     override val node: ConfigurationNode
 ) : AbilityConfig {
 
-    override val ability: Ability<*> = type.load(node)
+    override val ability: Ability<*> by lazy {
+        this.type.load(this.node)
+    }
 }

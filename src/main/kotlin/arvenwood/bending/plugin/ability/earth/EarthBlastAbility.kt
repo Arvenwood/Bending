@@ -1,8 +1,8 @@
 package arvenwood.bending.plugin.ability.earth
 
 import arvenwood.bending.api.ability.*
+import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
 import arvenwood.bending.api.element.Elements
-import arvenwood.bending.api.util.enumSetOf
 import ninja.leaping.configurate.ConfigurationNode
 
 data class EarthBlastAbility(
@@ -21,7 +21,7 @@ data class EarthBlastAbility(
 
     companion object : AbstractAbilityType<EarthBlastAbility>(
         element = Elements.Earth,
-        executionTypes = enumSetOf(AbilityExecutionType.LEFT_CLICK),
+        executionTypes = setOf(LeftClick::class),
         id = "bending:earth_blast",
         name = "EarthBlast"
     ) {

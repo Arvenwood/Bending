@@ -1,6 +1,7 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
+import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.BenderService
@@ -33,7 +34,7 @@ data class AirScooterAbility(
 
     companion object : AbstractAbilityType<AirScooterAbility>(
         element = Elements.Air,
-        executionTypes = enumSetOf(AbilityExecutionType.LEFT_CLICK),
+        executionTypes = setOf(LeftClick::class),
         id = "bending:air_scooter",
         name = "AirScooter"
     ) {
@@ -88,8 +89,7 @@ data class AirScooterAbility(
                 phi = this.displayScooter(phi, context)
             }
 
-            val origin: Location<World> = player.eyeLocation
-            val floor: Location<World> = getFloor(origin) ?: return Success
+            val floor: Location<World> = getFloor(player.eyeLocation) ?: return Success
 
             var velocity: Vector3d = player.headDirection.normalize().mul(this.speed)
 

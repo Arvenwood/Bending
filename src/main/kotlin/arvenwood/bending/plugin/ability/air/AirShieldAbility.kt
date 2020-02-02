@@ -1,13 +1,13 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
+import arvenwood.bending.api.ability.AbilityExecutionType.Sneak
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.protection.BuildProtectionService
 import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.service.EffectService
-import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
@@ -38,7 +38,7 @@ data class AirShieldAbility(
 
     companion object : AbstractAbilityType<AirShieldAbility>(
         element = Elements.Air,
-        executionTypes = enumSetOf(AbilityExecutionType.SNEAK),
+        executionTypes = setOf(Sneak::class),
         id = "bending:air_shield",
         name = "AirShield"
     ) {

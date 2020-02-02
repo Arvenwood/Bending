@@ -24,9 +24,7 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
     private val runningMap = IdentityHashMap<Job, SimpleAbilityExecution>()
 
     private val awaitingMap: Table<AbilityType<*>, AbilityExecutionType, Continuation<Unit>> =
-        Tables.newCustomTable<AbilityType<*>, AbilityExecutionType, Continuation<Unit>>(IdentityHashMap()) {
-            EnumMap(AbilityExecutionType::class.java)
-        }
+        Tables.newCustomTable<AbilityType<*>, AbilityExecutionType, Continuation<Unit>>(IdentityHashMap()) { HashMap() }
 
     override var flight = StackableBoolean(0)
 
@@ -71,7 +69,7 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
     private val exceptionHandler: CoroutineExceptionHandler = CoroutineExceptionHandler(this::cancelAbility)
 
     override fun execute(ability: Ability<*>, executionType: AbilityExecutionType) {
-        if (executionType !in ability.type.executionTypes) {
+        if (executionType::class !in ability.type.executionTypes) {
             // This ability is executed differently.
             return
         }

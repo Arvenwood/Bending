@@ -1,6 +1,7 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
+import arvenwood.bending.api.ability.AbilityExecutionType.Sneak
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
@@ -33,7 +34,7 @@ data class CombustionAbility(
 
     companion object : AbstractAbilityType<CombustionAbility>(
         element = Elements.Fire,
-        executionTypes = enumSetOf(AbilityExecutionType.SNEAK),
+        executionTypes = setOf(Sneak::class),
         id = "bending:combustion",
         name = "Combustion"
     ) {

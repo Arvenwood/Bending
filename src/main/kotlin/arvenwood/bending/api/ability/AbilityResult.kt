@@ -31,4 +31,8 @@ sealed class AbilityResult {
     object ErrorOutOfRange : Error() {
         override fun toString(): String = "ErrorOutOfRange"
     }
+
+    object ErrorWallReached : Error() {
+        override fun toString(): String = "ErrorWallReached"
+    }
 }

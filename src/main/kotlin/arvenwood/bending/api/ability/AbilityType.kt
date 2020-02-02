@@ -6,6 +6,7 @@ import org.spongepowered.api.CatalogType
 import org.spongepowered.api.event.cause.Cause
 import org.spongepowered.api.text.Text
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 
 interface AbilityType<out T : Ability<T>> : CatalogType, CoroutineContext.Element {
 
@@ -19,7 +20,7 @@ interface AbilityType<out T : Ability<T>> : CatalogType, CoroutineContext.Elemen
 
     val element: Element
 
-    val executionTypes: Set<AbilityExecutionType>
+    val executionTypes: Set<KClass<out AbilityExecutionType>>
 
     val default: Ability<T>
 

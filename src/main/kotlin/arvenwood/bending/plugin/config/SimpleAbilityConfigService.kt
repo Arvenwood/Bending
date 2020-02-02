@@ -13,6 +13,9 @@ class SimpleAbilityConfigService : AbilityConfigService {
     private val configs: Table<String, AbilityType<*>, AbilityConfig> =
         Tables.newCustomTable<String, AbilityType<*>, AbilityConfig>(HashMap()) { IdentityHashMap() }
 
+    override val all: Collection<AbilityConfig>
+        get() = this.configs.values()
+
     override fun get(name: String, type: AbilityType<*>): AbilityConfig? =
         this.configs[name, type]
 

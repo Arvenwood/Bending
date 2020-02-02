@@ -1,6 +1,7 @@
 package arvenwood.bending.plugin.ability.earth
 
 import arvenwood.bending.api.ability.*
+import arvenwood.bending.api.ability.AbilityExecutionType.Sneak
 import arvenwood.bending.api.ability.AbilityResult.ErrorProtected
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
@@ -35,7 +36,7 @@ data class EarthTunnelAbility(
 
     companion object : AbstractAbilityType<EarthTunnelAbility>(
         element = Elements.Earth,
-        executionTypes = enumSetOf(AbilityExecutionType.SNEAK),
+        executionTypes = setOf(Sneak::class),
         id = "bending:earth_tunnel",
         name = "EarthTunnel"
     ) {

@@ -1,6 +1,7 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.util.identityHashSetOf
+import com.flowpowered.math.vector.Vector3d
 import org.spongepowered.api.block.BlockType
 import org.spongepowered.api.block.BlockTypes
 
@@ -24,4 +25,7 @@ object AirConstants {
         identityHashSetOf(
             BlockTypes.STONE_BUTTON, BlockTypes.WOODEN_BUTTON
         )
+
+    @JvmField
+    val VECTOR_0_275: Vector3d = Vector3d(0.275, 0.275, 0.275)
 }

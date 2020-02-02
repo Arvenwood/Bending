@@ -1,6 +1,7 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
+import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.direction
@@ -40,7 +41,7 @@ data class FireWallAbility(
 
     companion object : AbstractAbilityType<FireWallAbility>(
         element = Elements.Fire,
-        executionTypes = enumSetOf(AbilityExecutionType.LEFT_CLICK),
+        executionTypes = setOf(LeftClick::class),
         id = "bending:fire_wall",
         name = "FireWall"
     ) {

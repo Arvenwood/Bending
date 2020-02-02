@@ -1,11 +1,11 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
+import arvenwood.bending.api.ability.AbilityExecutionType.Sneak
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.ProtectionService
-import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.getNearbyEntities
 import arvenwood.bending.api.util.getNearbyLocations
 import arvenwood.bending.api.util.spawnParticles
@@ -38,7 +38,7 @@ data class FireShieldAbility(
 
     companion object : AbstractAbilityType<FireShieldAbility>(
         element = Elements.Fire,
-        executionTypes = enumSetOf(AbilityExecutionType.SNEAK),
+        executionTypes = setOf(Sneak::class),
         id = "bending:fire_shield",
         name = "FireShield"
     ) {

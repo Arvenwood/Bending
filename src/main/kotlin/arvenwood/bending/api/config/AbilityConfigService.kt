@@ -11,6 +11,8 @@ interface AbilityConfigService {
             Sponge.getServiceManager().provideUnchecked(AbilityConfigService::class.java)
     }
 
+    val all: Collection<AbilityConfig>
+
     operator fun get(name: String, type: AbilityType<*>): AbilityConfig?
 
     operator fun get(name: String): Map<AbilityType<*>, AbilityConfig>

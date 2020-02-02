@@ -1,13 +1,13 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
+import arvenwood.bending.api.ability.AbilityExecutionType.LeftClick
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.util.*
 import com.flowpowered.math.vector.Vector3d
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
@@ -32,7 +32,7 @@ data class AirSpoutAbility(
 
     companion object : AbstractAbilityType<AirSpoutAbility>(
         element = Elements.Air,
-        executionTypes = enumSetOf(AbilityExecutionType.LEFT_CLICK),
+        executionTypes = setOf(LeftClick::class),
         id = "bending:air_spout",
         name = "AirSpout"
     ) {
@@ -67,7 +67,7 @@ data class AirSpoutAbility(
         context[angle] = 0
 
         val startTime: Long = System.currentTimeMillis()
-        val defer: Job = BenderService.get()[player.uniqueId].deferExecution(AirSpoutAbility, AbilityExecutionType.LEFT_CLICK)
+        val defer: Job = BenderService.get()[player.uniqueId].deferExecution(AirSpoutAbility, LeftClick)
         abilityLoopUnsafe {
             if (player.isRemoved) {
                 return Success
