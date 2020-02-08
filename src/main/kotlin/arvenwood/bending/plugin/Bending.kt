@@ -1,9 +1,9 @@
 package arvenwood.bending.plugin
 
 import arvenwood.bending.api.Bender
+import arvenwood.bending.api.ability.Ability
 import arvenwood.bending.api.ability.AbilityType
 import arvenwood.bending.api.config.AbilityConfig
-import arvenwood.bending.api.config.AbilityConfigLoader
 import arvenwood.bending.api.config.AbilityConfigService
 import arvenwood.bending.api.config.simple.FolderAbilityConfigLoader
 import arvenwood.bending.api.element.Element
@@ -16,6 +16,7 @@ import arvenwood.bending.api.service.*
 import arvenwood.bending.api.util.registerModule
 import arvenwood.bending.api.util.setProvider
 import arvenwood.bending.plugin.ability.air.*
+import arvenwood.bending.plugin.ability.earth.EarthTunnelAbility
 import arvenwood.bending.plugin.ability.fire.*
 import arvenwood.bending.plugin.command.abilityConfig
 import arvenwood.bending.plugin.config.SimpleAbilityConfigService
@@ -39,7 +40,7 @@ import org.spongepowered.api.command.CommandPermissionException
 import org.spongepowered.api.command.CommandResult
 import org.spongepowered.api.command.CommandSource
 import org.spongepowered.api.command.args.CommandContext
-import org.spongepowered.api.command.args.GenericArguments.*
+import org.spongepowered.api.command.args.GenericArguments.player
 import org.spongepowered.api.command.spec.CommandSpec
 import org.spongepowered.api.config.ConfigDir
 import org.spongepowered.api.entity.living.player.Player
@@ -51,13 +52,9 @@ import org.spongepowered.api.plugin.Dependency
 import org.spongepowered.api.plugin.Plugin
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.chat.ChatTypes
-import org.spongepowered.api.text.format.TextColors
 import org.spongepowered.api.text.format.TextColors.*
 import java.nio.file.Path
 import javax.inject.Inject
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.iterator
 
 @Plugin(
     id = "bending", name = "Bending", version = "0.1.0",
@@ -80,6 +77,9 @@ class Bending @Inject constructor(
 
         internal lateinit var SYNC: CoroutineDispatcher
             private set
+
+        internal lateinit var LOGGER: Logger
+            private set
     }
 
     private val abilitiesDir: Path = this.configDir.resolve("abilities")
@@ -87,10 +87,13 @@ class Bending @Inject constructor(
     private lateinit var transientBlockService: SimpleTransientBlockService
     private lateinit var abilityConfigService: SimpleAbilityConfigService
 
+    private lateinit var scoreboardManager: ScoreboardManager
+
     @Listener
     fun onPreInit(event: GamePreInitializationEvent) {
         ASYNC = Sponge.getScheduler().createAsyncExecutor(this).asCoroutineDispatcher()
         SYNC = Sponge.getScheduler().createSyncExecutor(this).asCoroutineDispatcher()
+        LOGGER = this.logger
 
         this.logger.info("Copying default ability config, if absent...")
 
@@ -179,8 +182,8 @@ class Bending @Inject constructor(
                 val targetBender: Bender = BenderService.get()[target.uniqueId]
 
                 srcBender.clearEquipped()
-                for ((index, ability) in targetBender.equippedAbilities) {
-                    srcBender[index] = ability
+                for ((index: Int, ability: Ability<*>?) in targetBender.equippedAbilities.withIndex()) {
+                    srcBender.setEquipped(index, ability)
                 }
 
                 CommandResult.success()
@@ -233,6 +236,9 @@ class Bending @Inject constructor(
         this.logger.info("Starting tasks...")
 
         this.transientBlockService.start(this)
+
+        this.scoreboardManager = ScoreboardManager()
+        Sponge.getEventManager().registerListeners(this, this.scoreboardManager)
     }
 
     @Listener
@@ -240,6 +246,13 @@ class Bending @Inject constructor(
         this.logger.info("Reloading plugin...")
 
         this.loadConfigs()
+    }
+
+    @Listener
+    fun onStopping(event: GameStoppingServerEvent) {
+        this.logger.info("Stopping tasks...")
+
+        this.transientBlockService.stop()
     }
 
     @Listener
@@ -265,6 +278,8 @@ class Bending @Inject constructor(
         event.register(AirSpoutAbility)
         event.register(AirSwipeAbility)
         event.register(AirTornadoAbility)
+
+        event.register(EarthTunnelAbility)
 
         event.register(CombustionAbility)
         event.register(FireBlastAbility)

@@ -37,7 +37,7 @@ var Player.selectedSlotIndex: Int
 /**
  * @see [Keys.IS_SNEAKING]
  */
-var Player.isSneaking: Boolean
+inline var Player.isSneaking: Boolean
     get() = this.getOrElse(Keys.IS_SNEAKING, false)
     set(value) {
         this.offer(Keys.IS_SNEAKING, value)
@@ -46,7 +46,7 @@ var Player.isSneaking: Boolean
 /**
  * @see [Keys.IS_SPRINTING]
  */
-var Player.isSprinting: Boolean
+inline var Player.isSprinting: Boolean
     get() = this.getOrElse(Keys.IS_SPRINTING, false)
     set(value) {
         this.offer(Keys.IS_SPRINTING, value)
@@ -55,7 +55,7 @@ var Player.isSprinting: Boolean
 /**
  * @see [Keys.CAN_FLY]
  */
-var Player.canFly: Boolean
+inline var Player.canFly: Boolean
     get() = this.getOrElse(Keys.CAN_FLY, false)
     set(value) {
         this.offer(Keys.CAN_FLY, value)
@@ -64,7 +64,7 @@ var Player.canFly: Boolean
 /**
  * @see [Keys.IS_FLYING]
  */
-var Player.isFlying: Boolean
+inline var Player.isFlying: Boolean
     get() = this.getOrElse(Keys.IS_FLYING, false)
     set(value) {
         this.offer(Keys.IS_FLYING, value)

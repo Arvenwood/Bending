@@ -5,16 +5,14 @@ import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
-import arvenwood.bending.plugin.util.forInclusive
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.effect.particle.ParticleEffect
 import org.spongepowered.api.effect.particle.ParticleTypes
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.living.player.Player
-import org.spongepowered.api.world.Location
-import org.spongepowered.api.world.World
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -44,14 +42,31 @@ data class AirJumpAbility(
         .offset(Vector3d.ZERO)
         .build()
 
+    private val angularVelocity: Double = Math.PI / 16
+
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context[StandardContext.player] ?: return ErrorNoTarget
+        val direction: Vector3d = player.headDirection
 
-        forInclusive(from = 0.0, to = 50.0, step = 0.05) { y: Double ->
-            val x: Double = this.particleRadius * cos(y)
-            val z: Double = this.particleRadius * sin(y)
-            val location: Location<World> = player.location.add(Vector3d(x, y, z).rotateAroundAxis(player.headRotation.normalize()))
-            location.spawnParticles(this.particleEffect)
+        var step = 0
+
+        for (x: Int in 0 until 10) {
+            if (step > 180) {
+                step = 0
+            }
+
+            val angle: Double = step * this.angularVelocity
+            val radius: Double = step * 0.006
+            val length: Double = step * 0.05
+
+            val vec: Vector3d = Vector3d(cos(angle) * radius, length, sin(angle) * radius)
+                .rotateAroundAxisX(Math.toRadians(direction.x + 90))
+                .rotateAroundAxisY(Math.toRadians(-direction.y))
+
+            player.location.add(vec)
+                .spawnParticles(EffectService.get().createRandomParticle(Elements.Air, 4))
+
+            step++
         }
 
         player.location.extent.playSound(SoundTypes.ENTITY_CREEPER_HURT, player.location.position, 1.0, 0.5)

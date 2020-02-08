@@ -2,7 +2,6 @@ package arvenwood.bending.api.ability
 
 import arvenwood.bending.api.service.AbilityService
 import kotlinx.coroutines.delay
-import org.spongepowered.api.entity.living.player.Player
 
 /**
  * Loops indefinitely until the block returns from the parent function or throws an exception.
@@ -13,6 +12,17 @@ suspend inline fun abilityLoopUnsafe(block: () -> Unit): Nothing {
     while (true) {
         block()
         delay(delayMilli)
+    }
+}
+
+/**
+ * Loops indefinitely until the block returns from the parent function or throws an exception.
+ * Use with care, otherwise this can cause the main thread to halt.
+ */
+suspend inline fun abilityLoopUnsafeAt(intervalMilli: Long, block: () -> Unit): Nothing {
+    while (true) {
+        block()
+        delay(intervalMilli)
     }
 }
 

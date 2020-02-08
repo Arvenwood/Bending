@@ -1,11 +1,11 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     java
     kotlin("jvm") version "1.3.61"
     kotlin("kapt") version "1.3.61"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.3.60"
     id("com.github.johnrengelman.shadow") version "4.0.4"
+
+    id("com.qixalite.spongestart2") version "4.0.0"
 }
 
 group = "arvenwood"
@@ -48,6 +48,8 @@ configure<JavaPluginConvention> {
     sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
+val shadowJar: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar by tasks
+
 tasks {
     compileKotlin {
         kotlinOptions.jvmTarget = "1.8"
@@ -57,6 +59,14 @@ tasks {
         kotlinOptions.jvmTarget = "1.8"
     }
     shadowJar {
-        archiveClassifier.set("all")
+        archiveClassifier.set("dist")
     }
+}
+
+spongestart {
+    minecraft = "1.12.2"
+}
+
+artifacts {
+    add("archives", shadowJar)
 }

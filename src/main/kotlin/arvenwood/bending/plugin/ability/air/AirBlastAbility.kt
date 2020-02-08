@@ -1,5 +1,6 @@
 package arvenwood.bending.plugin.ability.air
 
+import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
@@ -11,7 +12,6 @@ import arvenwood.bending.api.ability.StandardContext.direction
 import arvenwood.bending.api.ability.StandardContext.origin
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
-import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.action.AirProjectile
@@ -97,7 +97,8 @@ data class AirBlastAbility(
 
         context[StandardContext.origin] = origin
 
-        val defer: Job = BenderService.get()[player.uniqueId].deferExecution(AirBlastAbility, LEFT_CLICK)
+        val bender: Bender = context.require(StandardContext.bender)
+        val defer: Job = bender.deferExecution(AirBlastAbility, LEFT_CLICK)
         abilityLoop {
             if (player.isRemoved) {
                 defer.cancel()

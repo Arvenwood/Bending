@@ -3,7 +3,6 @@ package arvenwood.bending.plugin.ability.air
 import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
-import arvenwood.bending.api.ability.AbilityResult.ErrorDied
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.EffectService

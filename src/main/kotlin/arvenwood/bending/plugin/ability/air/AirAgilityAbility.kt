@@ -1,7 +1,8 @@
 package arvenwood.bending.plugin.ability.air
 
+import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
+import arvenwood.bending.api.ability.AbilityExecutionType.*
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.util.enumSetOf
@@ -10,11 +11,12 @@ import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.effect.potion.PotionEffect
 import org.spongepowered.api.effect.potion.PotionEffectTypes
+import org.spongepowered.api.effect.potion.PotionEffectTypes.JUMP_BOOST
+import org.spongepowered.api.effect.potion.PotionEffectTypes.SPEED
 import org.spongepowered.api.entity.living.player.Player
 
 data class AirAgilityAbility(
     override val cooldown: Long,
-    val duration: Long,
     val jumpPower: Int,
     val speedPower: Int
 ) : Ability<AirAgilityAbility> {
@@ -23,13 +25,12 @@ data class AirAgilityAbility(
 
     companion object : AbstractAbilityType<AirAgilityAbility>(
         element = Elements.Air,
-        executionTypes = enumSetOf(LEFT_CLICK),
+        executionTypes = enumSetOf(SPRINT_ON, SPRINT_OFF),
         id = "bending:air_agility",
         name = "AirAgility"
     ) {
         override fun load(node: ConfigurationNode): AirAgilityAbility = AirAgilityAbility(
             cooldown = node.getNode("cooldown").long,
-            duration = node.getNode("duration").long,
             jumpPower = node.getNode("jumpPower").int,
             speedPower = node.getNode("speedPower").int
         )
@@ -37,42 +38,43 @@ data class AirAgilityAbility(
 
     private val effectJump: PotionEffect =
         PotionEffect.builder()
-            .potionType(PotionEffectTypes.JUMP_BOOST)
+            .potionType(JUMP_BOOST)
             .amplifier(this.jumpPower)
-            .duration(5)
+            .duration(Int.MAX_VALUE)
             .particles(false)
             .build()
 
     private val effectSpeed: PotionEffect =
         PotionEffect.builder()
-            .potionType(PotionEffectTypes.SPEED)
+            .potionType(SPEED)
             .amplifier(this.speedPower)
-            .duration(5)
+            .duration(Int.MAX_VALUE)
             .particles(false)
             .build()
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
-        val player: Player = context[StandardContext.player] ?: return ErrorNoTarget
+        if (executionType !== SPRINT_ON) {
+            return Success // TODO: better result type
+        }
 
-        val startTime: Long = System.currentTimeMillis()
-        abilityLoopUnsafeQuarterTime {
-            if (player.isRemoved) return Success
-            if (!player.isSprinting) return Success
+        val player: Player = context.require(StandardContext.player)
+        val bender: Bender = context.require(StandardContext.bender)
 
-            if (this.duration > 0 && startTime + this.duration <= System.currentTimeMillis()) {
-                return ErrorDurationLimited
-            }
+        player.transform(Keys.POTION_EFFECTS) { effects: List<PotionEffect>? ->
+            val effects = effects?.toMutableList() ?: arrayListOf()
+            effects += this.effectJump
+            effects += this.effectSpeed
+            effects
+        }
 
-            player.transform(Keys.POTION_EFFECTS) { effects: MutableList<PotionEffect> ->
-                if (effects.none { it.type == PotionEffectTypes.JUMP_BOOST && it.amplifier >= this.jumpPower }) {
-                    effects += this.effectJump
-                }
-                if (effects.none { it.type == PotionEffectTypes.SPEED && it.amplifier >= this.speedPower }) {
-                    effects += this.effectSpeed
-                }
+        bender.awaitExecution(AirAgilityAbility, SPRINT_OFF)
 
-                effects
+        player.transform(Keys.POTION_EFFECTS) { effects: List<PotionEffect>? ->
+            effects.orEmpty().filterNot {
+                (it.type == JUMP_BOOST && it.amplifier == this.jumpPower) || (it.type == SPEED && it.amplifier == this.speedPower)
             }
         }
+
+        return Success
     }
 }

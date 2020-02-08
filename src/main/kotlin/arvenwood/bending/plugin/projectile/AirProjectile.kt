@@ -19,7 +19,6 @@ import org.spongepowered.api.event.cause.entity.damage.source.DamageSources
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 import kotlin.math.absoluteValue
-import kotlin.random.Random
 
 data class AirProjectile(
     val origin: Location<World>,

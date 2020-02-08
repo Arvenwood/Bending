@@ -2,7 +2,6 @@ package arvenwood.bending.api.util.async
 
 import kotlinx.coroutines.*
 import org.spongepowered.api.Sponge
-import org.spongepowered.api.plugin.PluginContainer
 import org.spongepowered.api.scheduler.Scheduler
 import org.spongepowered.api.scheduler.Task
 import java.util.concurrent.TimeUnit

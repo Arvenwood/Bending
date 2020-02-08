@@ -2,12 +2,14 @@ package arvenwood.bending.plugin
 
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.plugin.ability.SimpleAbilityContext
-import arvenwood.bending.api.util.StackableBoolean
+import arvenwood.bending.api.event.ExecuteAbilityEvent
+import arvenwood.bending.api.event.SetCooldownEvent
 import arvenwood.bending.api.util.selectedSlotIndex
+import arvenwood.bending.plugin.ability.SimpleAbilityContext
 import arvenwood.bending.plugin.ability.SimpleAbilityJob
+import arvenwood.bending.plugin.util.enumMap
+import arvenwood.bending.plugin.util.table
 import com.google.common.collect.Table
-import com.google.common.collect.Tables
 import kotlinx.coroutines.*
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.data.key.Keys
@@ -18,46 +20,35 @@ import kotlin.coroutines.*
 
 class SimpleBender(private val uniqueId: UUID) : Bender {
 
-    private val player: Player get() = Sponge.getServer().getPlayer(this.uniqueId).get()
+    private val runningMap = IdentityHashMap<Job, SimpleAbilityJob>()
+    private val cooldownMap = IdentityHashMap<AbilityType<*>, Long>()
+    private val waitingMap: Table<AbilityType<*>, AbilityExecutionType, Continuation<Unit>> =
+        table(IdentityHashMap()) { enumMap<AbilityExecutionType, Continuation<Unit>>() }
 
     private val equipped: Array<Ability<*>?> = arrayOfNulls(size = 9)
 
-    private val runningMap = IdentityHashMap<Job, SimpleAbilityJob>()
+    private val exceptionHandler: CoroutineExceptionHandler = CoroutineExceptionHandler(this::cancelAbility)
+    private val waitingExceptionHandler: CoroutineExceptionHandler = CoroutineExceptionHandler(this::cancelWaiting)
 
-    private val awaitingMap: Table<AbilityType<*>, AbilityExecutionType, Continuation<Unit>> =
-        Tables.newCustomTable<AbilityType<*>, AbilityExecutionType, Continuation<Unit>>(IdentityHashMap()) {
-            EnumMap(AbilityExecutionType::class.java)
-        }
+    override val player: Player get() = Sponge.getServer().getPlayer(this.uniqueId).get()
 
-    override var flight = StackableBoolean(0)
+    override val equippedAbilities: List<Ability<*>?> get() = this.equipped.toCollection(ArrayList(9))
+
+    override val runningAbilities: Collection<AbilityJob> get() = runningMap.values
 
     override var selectedAbility: Ability<*>?
-        get() = this[this.player.selectedSlotIndex]
+        get() = this.getEquipped(this.player.selectedSlotIndex)
         set(value) {
-            this[this.player.selectedSlotIndex] = value
+            this.setEquipped(this.player.selectedSlotIndex, value)
         }
 
-    override val equippedAbilities: Map<Int, Ability<*>>
-        get() {
-            val result = HashMap<Int, Ability<*>>()
-            for (i in this.equipped.indices) {
-                val ability: Ability<*> = this.equipped[i] ?: continue
-                result[i] = ability
-            }
-            return result
-        }
-
-    override fun get(hotbarIndex: Int): Ability<*>? {
+    override fun getEquipped(hotbarIndex: Int): Ability<*>? {
         check(hotbarIndex in 0..8) { "Invalid hotbar index: $hotbarIndex" }
         return this.equipped[hotbarIndex]
     }
 
-    override fun set(hotbarIndex: Int, ability: Ability<*>?) {
+    override fun setEquipped(hotbarIndex: Int, ability: Ability<*>?) {
         check(hotbarIndex in 0..8) { "Invalid hotbar index: $hotbarIndex" }
-        val old: Ability<*>? = this.equipped[hotbarIndex]
-        if (old != null) {
-
-        }
         this.equipped[hotbarIndex] = ability
     }
 
@@ -67,10 +58,6 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
         }
     }
 
-    override val runningAbilities: Collection<AbilityJob> get() = runningMap.values
-
-    private val exceptionHandler: CoroutineExceptionHandler = CoroutineExceptionHandler(this::cancelAbility)
-
     override fun execute(ability: Ability<*>, executionType: AbilityExecutionType) {
         val player: Player = this.player
 
@@ -79,25 +66,17 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
             return
         }
 
-//        player.sendMessage(Text.of("Executing ${ability.type.name} by $executionType"))
-
-        val cont: Continuation<Unit>? = this.awaitingMap.remove(ability.type, executionType)
+        val cont: Continuation<Unit>? = this.waitingMap.remove(ability.type, executionType)
         if (cont != null) {
             // Found a waiting ability.
             cont.resume(Unit)
             return
         }
 
-//        player.sendMessage(Text.of("No waiting ability."))
-
-
         if (this.hasCooldown(ability.type)) {
             // This ability is on cooldown.
             return
         }
-
-//        player.sendMessage(Text.of("No cooldown."))
-
 
         val context = SimpleAbilityContext()
 
@@ -106,38 +85,36 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
 
         if (executionType == AbilityExecutionType.FALL) {
             context[StandardContext.fallDistance] = player.getOrElse(Keys.FALL_DISTANCE, 0F)
-            player.sendMessage(Text.of("Set fall distance."))
         }
 
         // Pre-load some values into the context.
         context[StandardContext.player] = player
+        context[StandardContext.bender] = this
         ability.prepare(player, context)
-
-//        player.sendMessage(Text.of("Prepared."))
 
         if (!ability.validate(context)) {
             // Should we try to run the ability?
             return
         }
 
-//        player.sendMessage(Text.of("Validated."))
-
-        ability.preempt(context, executionType)
-
-//        player.sendMessage(Text.of("Preempted."))
+        val event = ExecuteAbilityEvent(player, this, ability.type, executionType, Sponge.getCauseStackManager().currentCause)
+        Sponge.getEventManager().post(event)
+        if (event.isCancelled) {
+            return
+        }
 
         if (ability.cooldown > 0) {
             // Set the cooldown. Don't spam your abilities!
             this.setCooldown(ability.type, ability.cooldown)
-
-//            player.sendMessage(Text.of("Cooldown set."))
         }
+
+        ability.preempt(context, executionType)
 
         lateinit var execution: SimpleAbilityJob
         lateinit var job: Job
 
         val coroutine: CoroutineContext =
-            Bending.SYNC + ability + context + executionType + exceptionHandler
+            Bending.SYNC + exceptionHandler + ability + context + executionType
 
         job = GlobalScope.launch(coroutine) {
             ability.execute(context, executionType)
@@ -147,8 +124,6 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
         execution = SimpleAbilityJob(job)
 
         this.runningMap[job] = execution
-
-//        player.sendMessage(Text.of("Ability executed."))
     }
 
     private fun cancelAbility(context: CoroutineContext, throwable: Throwable) {
@@ -159,25 +134,31 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
 
         val job: Job = context[Job]!!
         this.runningMap.remove(job)
+
+        if (throwable !is CancellationException) {
+            Bending.LOGGER.error("Ability failed to execute", throwable)
+        }
     }
 
     override suspend fun awaitExecution(type: AbilityType<*>, executionType: AbilityExecutionType): Unit =
         suspendCoroutine {
-            val old: Continuation<Unit>? = this.awaitingMap.put(type, executionType, it)
+            val old: Continuation<Unit>? = this.waitingMap.put(type, executionType, it)
             old?.resumeWithException(CancellationException("Waiting ability cancelled"))
         }
 
-    private val waitingExceptionHandler: CoroutineExceptionHandler = CoroutineExceptionHandler(this::cancelWaiting)
-
     override fun deferExecution(type: AbilityType<*>, executionType: AbilityExecutionType): Job =
-        GlobalScope.launch(Bending.SYNC + type + executionType + waitingExceptionHandler) {
+        GlobalScope.launch(Bending.SYNC + waitingExceptionHandler + type + executionType) {
             awaitExecution(type, executionType)
         }
 
     private fun cancelWaiting(context: CoroutineContext, throwable: Throwable) {
         val ability: Ability<*> = context[Ability] ?: return
         val executionType: AbilityExecutionType = context[AbilityExecutionType] ?: return
-        this.awaitingMap.remove(ability, executionType)?.resumeWithException(CancellationException("Waiting ability cancelled"))
+        this.waitingMap.remove(ability, executionType)?.resumeWithException(CancellationException("Waiting ability cancelled"))
+
+        if (throwable !is CancellationException) {
+            Bending.LOGGER.error("Ability failed to execute", throwable)
+        }
     }
 
     override fun cancel(type: AbilityType<*>): Boolean {
@@ -197,8 +178,6 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
         return found
     }
 
-    private val cooldownMap = IdentityHashMap<AbilityType<*>, Long>()
-
     override fun hasCooldown(type: AbilityType<*>): Boolean {
         val cooldown: Long = this.cooldownMap[type] ?: return false
         val current: Long = System.currentTimeMillis()
@@ -210,9 +189,24 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
     }
 
     override fun setCooldown(type: AbilityType<*>, duration: Long) {
-        this.cooldownMap[type] = System.currentTimeMillis() + duration
+        val next: Long = System.currentTimeMillis() + duration
+
+        val event = SetCooldownEvent(this.player, type, next, Sponge.getCauseStackManager().currentCause)
+        Sponge.getEventManager().post(event)
+        if (event.isCancelled) {
+            return
+        }
+
+        this.cooldownMap[type] = next
     }
 
-    override fun removeCooldown(type: AbilityType<*>): Long? =
-        this.cooldownMap.remove(type)
+    override fun removeCooldown(type: AbilityType<*>): Long? {
+        val event = SetCooldownEvent(this.player, type, null, Sponge.getCauseStackManager().currentCause)
+        Sponge.getEventManager().post(event)
+        if (event.isCancelled) {
+            return null
+        }
+
+        return this.cooldownMap.remove(type)
+    }
 }

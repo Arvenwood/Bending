@@ -11,7 +11,6 @@ import arvenwood.bending.api.util.*
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.block.BlockTypes
-import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
@@ -78,30 +77,22 @@ data class EarthTunnelAbility(
         var curRadius: Double = this.radius
         var depth: Double = max(0.0, origin.distance(curLoc) - 1)
 
-        var curTime: Long = System.currentTimeMillis()
-        abilityLoopUnsafe {
-            if (curTime + this.interval >= System.currentTimeMillis()) {
-                // We must wait a bit longer.
-                return@abilityLoopUnsafe
-            }
-
-            curTime = System.currentTimeMillis()
-
-            if (player.getOrElse(Keys.IS_SNEAKING, false) || player.headDirection.angle(direction).absoluteValue > DEG_20_IN_RAD) {
+        abilityLoopUnsafeAt(this.interval) {
+            if (!player.isSneaking || player.headDirection.angle(direction).absoluteValue > DEG_20_IN_RAD) {
                 return Success
             }
 
             for (i in 0 until this.blocksPerInterval) {
-                while ((!(curLoc.blockType.isEarth() || curLoc.blockType.isSand())) || (this.ignoreOres && curLoc.blockType.isOre())) {
+                while (!(curLoc.blockType.isEarth() || curLoc.blockType.isSand()) || (this.ignoreOres && curLoc.blockType.isOre())) {
                     // TODO check for transparent block
                     if (depth >= this.range) {
                         return Success
                     }
 
-                    if (curAngle >= 360) {
+                    if (curAngle >= 360.0) {
                         curAngle = 0.0
                     } else {
-                        curAngle += 20
+                        curAngle += 20.0
                     }
 
                     if (curRadius >= this.maxRadius) {

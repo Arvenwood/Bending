@@ -1,7 +1,6 @@
 package arvenwood.bending.api.ability
 
 import arvenwood.bending.api.element.Element
-import kotlin.reflect.KClass
 
 abstract class AbstractAbilityType<out T : Ability<T>>(
     override val element: Element,

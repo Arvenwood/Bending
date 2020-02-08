@@ -16,8 +16,7 @@ class SimpleTransientBlockService : TransientBlockService {
 
     private val revertQueue: PriorityQueue<SimpleSnapshot> = PriorityQueue(Comparator.comparing(SimpleSnapshot::revertAtMilli))
 
-    var task: Task? = null
-        private set
+    private var task: Task? = null
 
     fun start(plugin: Any) {
         this.task = Task.builder()
@@ -38,6 +37,15 @@ class SimpleTransientBlockService : TransientBlockService {
                 }
             }
             .submit(plugin)
+    }
+
+    fun stop() {
+        this.task?.cancel()
+
+        while (this.revertQueue.isNotEmpty()) {
+            val snapshot: SimpleSnapshot = this.revertQueue.poll()
+            snapshot.revert()
+        }
     }
 
     override fun get(location: Location<World>): SimpleSnapshot? =

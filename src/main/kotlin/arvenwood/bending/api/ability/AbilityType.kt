@@ -5,7 +5,6 @@ import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.CatalogType
 import org.spongepowered.api.text.Text
 import kotlin.coroutines.CoroutineContext
-import kotlin.reflect.KClass
 
 interface AbilityType<out T : Ability<T>> : CatalogType, CoroutineContext.Element {
 

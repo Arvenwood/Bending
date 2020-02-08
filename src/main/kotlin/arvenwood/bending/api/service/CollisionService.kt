@@ -1,5 +1,6 @@
 package arvenwood.bending.api.service
 
+import arvenwood.bending.api.ability.AbilityJob
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
@@ -12,9 +13,9 @@ interface CollisionService {
             Sponge.getServiceManager().provideUnchecked(CollisionService::class.java)
     }
 
-    fun checkAt(location: Location<World>): Boolean
+    operator fun contains(location: Location<World>): Boolean
 
-    fun addCollision(location: Location<World>)
+    operator fun get(location: Location<World>): AbilityJob?
 
-    fun removeCollision(location: Location<World>)
+    operator fun set(location: Location<World>, job: AbilityJob?)
 }

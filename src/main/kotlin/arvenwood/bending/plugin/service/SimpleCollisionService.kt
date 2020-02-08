@@ -1,32 +1,23 @@
 package arvenwood.bending.plugin.service
 
+import arvenwood.bending.api.ability.AbilityJob
 import arvenwood.bending.api.service.CollisionService
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 
 class SimpleCollisionService : CollisionService {
 
-    private val map = HashMap<Location<World>, Int>()
+    private val locations = HashMap<Location<World>, AbilityJob>()
 
-    override fun checkAt(location: Location<World>): Boolean = location in map
+    override fun contains(location: Location<World>): Boolean = location in this.locations
 
-    override fun addCollision(location: Location<World>) {
-        map.compute(location) { _, counter ->
-            if (counter == null) {
-                1
-            } else {
-                counter + 1
-            }
-        }
-    }
+    override fun get(location: Location<World>): AbilityJob? = this.locations[location]
 
-    override fun removeCollision(location: Location<World>) {
-        map.compute(location) { _, counter ->
-            if (counter == null || counter == 1) {
-                null
-            } else {
-                counter - 1
-            }
+    override fun set(location: Location<World>, job: AbilityJob?) {
+        if (job != null) {
+            this.locations[location] = job
+        } else {
+            this.locations.remove(location)
         }
     }
 }

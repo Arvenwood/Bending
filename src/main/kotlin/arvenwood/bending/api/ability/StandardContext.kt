@@ -1,5 +1,6 @@
 package arvenwood.bending.api.ability
 
+import arvenwood.bending.api.Bender
 import com.flowpowered.math.vector.Vector3d
 import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.player.Player
@@ -13,6 +14,11 @@ object StandardContext {
      * The player that initiated the ability.
      */
     object player : AbilityContext.Key<Player>("bending:player", "Player Context")
+
+    /**
+     * The bender that initiated the ability.
+     */
+    object bender : AbilityContext.Key<Bender>("bending:bender", "Bender Context")
 
     /**
      * How the ability was initiated.
@@ -50,3 +56,9 @@ object StandardContext {
 
     object fallDistance: AbilityContext.Key<Float>("bending:fall_distance", "Fall Distance Context")
 }
+
+val AbilityContext.player: Player get() = this.require(StandardContext.player)
+
+val AbilityContext.bender: Bender get() = this.require(StandardContext.bender)
+
+val AbilityContext.executionType: AbilityExecutionType get() = this.require(StandardContext.executionType)

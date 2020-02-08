@@ -3,10 +3,11 @@ package arvenwood.bending.plugin
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.Ability
 import arvenwood.bending.api.ability.AbilityExecutionType
+import arvenwood.bending.api.ability.AbilityExecutionType.*
 import arvenwood.bending.api.ability.AbilityType
 import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.util.get
-import arvenwood.bending.api.util.index
+import arvenwood.bending.plugin.ability.air.AirAgilityAbility
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.Listener
@@ -20,7 +21,6 @@ import org.spongepowered.api.event.entity.MoveEntityEvent
 import org.spongepowered.api.event.filter.Getter
 import org.spongepowered.api.event.filter.cause.Root
 import org.spongepowered.api.event.item.inventory.ChangeInventoryEvent
-import org.spongepowered.api.event.network.ClientConnectionEvent
 import org.spongepowered.api.text.Text
 import org.spongepowered.api.text.chat.ChatTypes
 import org.spongepowered.api.text.format.TextStyles
@@ -29,17 +29,7 @@ import org.spongepowered.api.util.Direction.DOWN
 class BendingListener {
 
     @Listener
-    fun onJoin(event: ClientConnectionEvent.Join) {
-        displayAbility(event.targetEntity)
-    }
-
-    @Listener
     fun onChangeSlot(event: ChangeInventoryEvent.Held, @Root player: Player) {
-        val oldSlot: Int = event.originalSlot.index
-        val newSlot: Int = event.finalSlot.index
-
-        if (oldSlot == newSlot) return
-
         displayAbility(player)
     }
 
@@ -59,14 +49,21 @@ class BendingListener {
     fun onLeftClick(event: InteractBlockEvent.Primary.MainHand, @Root player: Player) {
         val bender: Bender = BenderService.get()[player.uniqueId]
         val ability: Ability<*> = bender.selectedAbility ?: return
-        bender.execute(ability, AbilityExecutionType.LEFT_CLICK)
+        bender.execute(ability, LEFT_CLICK)
     }
 
     @Listener
     fun onRightClick(event: InteractEntityEvent.Secondary.MainHand, @Root player: Player) {
         val bender: Bender = BenderService.get()[player.uniqueId]
         val ability: Ability<*> = bender.selectedAbility ?: return
-        bender.execute(ability, AbilityExecutionType.RIGHT_CLICK)
+        bender.execute(ability, RIGHT_CLICK)
+    }
+
+    @Listener
+    fun onSwapHands(event: ChangeInventoryEvent.SwapHand, @Root player: Player) {
+        val bender: Bender = BenderService.get()[player.uniqueId]
+        val ability: Ability<*> = bender.selectedAbility ?: return
+        bender.execute(ability, SWAP_HAND)
     }
 
     @Listener
@@ -74,12 +71,14 @@ class BendingListener {
         if (event.endResult[Keys.IS_SNEAKING] == true) {
             val bender: Bender = BenderService.get()[player.uniqueId]
             val ability: Ability<*> = bender.selectedAbility ?: return
-            bender.execute(ability, AbilityExecutionType.SNEAK)
+            bender.execute(ability, SNEAK)
         }
-        if (event.endResult[Keys.IS_SPRINTING] == true) {
+
+        val isSprinting: Boolean? = event.endResult[Keys.IS_SPRINTING]
+        if (isSprinting != null) {
             val bender: Bender = BenderService.get()[player.uniqueId]
             val ability: Ability<*> = bender.selectedAbility ?: return
-            bender.execute(ability, AbilityExecutionType.SPRINT)
+            bender.execute(ability, if (isSprinting) SPRINT_ON else SPRINT_OFF)
         }
     }
 
@@ -97,7 +96,7 @@ class BendingListener {
 
         val bender: Bender = BenderService.get()[player.uniqueId]
         val ability: Ability<*> = bender.selectedAbility ?: return
-        bender.execute(ability, AbilityExecutionType.JUMP)
+        bender.execute(ability, JUMP)
     }
 
     @Listener
@@ -112,10 +111,14 @@ class BendingListener {
             return
         }
 
-        player.sendMessage(Text.of("Fell ${player.getOrElse(Keys.FALL_DISTANCE, -1.0F)} blocks"))
-
         val bender: Bender = BenderService.get()[player.uniqueId]
         val ability: Ability<*> = bender.selectedAbility ?: return
-        bender.execute(ability, AbilityExecutionType.FALL)
+
+        if (ability.type === AirAgilityAbility) {
+            event.isCancelled = true
+            return
+        }
+
+        bender.execute(ability, FALL)
     }
 }
