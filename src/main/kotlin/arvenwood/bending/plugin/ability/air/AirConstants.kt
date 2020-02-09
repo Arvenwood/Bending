@@ -35,5 +35,8 @@ object AirConstants {
     val VECTOR_0_2: Vector3d = Vector3d(0.2, 0.2, 0.2)
 
     @JvmField
+    val VECTOR_0_4: Vector3d = Vector3d(0.4, 0.4, 0.4)
+
+    @JvmField
     val EXTINGUISH_EFFECT: ParticleEffect = ParticleEffect.builder().type(ParticleTypes.FIRE_SMOKE).build()
 }

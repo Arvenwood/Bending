@@ -63,33 +63,49 @@ data class AirBurstAbility(
 
         when (executionType) {
             FALL -> {
-                if (context.require(StandardContext.fallDistance) >= this.fallThreshold) {
-                    return this.burst(player, player.location, 75.0, 105.0)
-                } else {
-                    return Success
-                }
+                return if (context.require(StandardContext.fallDistance) >= this.fallThreshold)
+                    this.burst(
+                        source = player,
+                        origin = player.location,
+                        thetaMin = 75.0,
+                        thetaMax = 105.0
+                    )
+                else Success
             }
             LEFT_CLICK -> {
-                return this.burst(player, player.location, 0.0, 180.0, player.headDirection.normalize(), this.maxConeRadians)
+                return this.burst(
+                    source = player,
+                    origin = player.location,
+                    thetaMin = 0.0,
+                    thetaMax = 180.0,
+                    targetDirection = player.headDirection.normalize(),
+                    maxAngle = this.maxConeRadians
+                )
             }
-            else -> {
-                var charged = false
-                val startTime: Long = System.currentTimeMillis()
-                abilityLoopUnsafe {
-                    if (!charged && startTime + this.chargeTime <= System.currentTimeMillis()) {
-                        charged = true
-                    }
+        }
 
-                    if (!player.isSneaking) {
-                        return if (charged) this.burst(player, player.eyeLocation, 0.0, 180.0) else Success
-                    }
+        var charged = false
+        val startTime: Long = System.currentTimeMillis()
+        abilityLoopUnsafe {
+            if (!charged && startTime + this.chargeTime <= System.currentTimeMillis()) {
+                charged = true
+            }
 
-                    if (charged) {
-                        player.eyeLocation.spawnParticles(EffectService.get().createRandomParticle(Elements.AIR, this.numSneakParticles))
-                    } else {
-                        player.eyeLocation.spawnParticles(AirConstants.EXTINGUISH_EFFECT)
-                    }
-                }
+            if (!player.isSneaking) {
+                return if (charged)
+                    this.burst(
+                        source = player,
+                        origin = player.eyeLocation,
+                        thetaMin = 0.0,
+                        thetaMax = 180.0
+                    )
+                else Success
+            }
+
+            if (charged) {
+                player.eyeLocation.spawnParticles(EffectService.get().createRandomParticle(Elements.AIR, this.numSneakParticles))
+            } else {
+                player.eyeLocation.spawnParticles(AirConstants.EXTINGUISH_EFFECT)
             }
         }
     }

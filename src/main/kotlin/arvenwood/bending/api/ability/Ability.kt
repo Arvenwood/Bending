@@ -1,5 +1,7 @@
 package arvenwood.bending.api.ability
 
+import arvenwood.bending.api.Bender
+import kotlinx.coroutines.Job
 import org.spongepowered.api.entity.living.player.Player
 import kotlin.coroutines.CoroutineContext
 
@@ -73,6 +75,12 @@ interface Ability<out T : Ability<T>> : CoroutineContext.Element {
      * @param context The context used for cleanup
      */
     fun cleanup(context: AbilityContext) {}
+
+    suspend fun Bender.awaitExecution(executionType: AbilityExecutionType): Unit =
+        this.awaitExecution(type, executionType)
+
+    fun Bender.deferExecution(executionType: AbilityExecutionType): Job =
+        this.deferExecution(type, executionType)
 
     override val key: CoroutineContext.Key<*> get() = CoroutineKey
 

@@ -71,7 +71,7 @@ data class AirBlastAbility(
     }
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
-        val player = context[player] ?: return ErrorNoTarget
+        val player: Player = context.player
 
         return when (executionType) {
             LEFT_CLICK -> this.runLeftClickMode(context, player, false)
@@ -85,8 +85,8 @@ data class AirBlastAbility(
 
         context[StandardContext.origin] = origin
 
-        val bender: Bender = context.require(StandardContext.bender)
-        val defer: Job = bender.deferExecution(this.type, LEFT_CLICK)
+        val bender: Bender = context.bender
+        val defer: Job = bender.deferExecution(LEFT_CLICK)
         abilityLoop {
             if (player.isRemoved) {
                 defer.cancel()

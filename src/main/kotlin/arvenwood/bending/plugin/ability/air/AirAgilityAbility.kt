@@ -51,10 +51,10 @@ data class AirAgilityAbility(
         val bender: Bender = context.require(StandardContext.bender)
 
         player.transform(Keys.POTION_EFFECTS) { effects: List<PotionEffect>? ->
-            val effects = effects?.toMutableList() ?: arrayListOf()
-            effects += this.effectJump
-            effects += this.effectSpeed
-            effects
+            val newEffects = effects?.toMutableList() ?: arrayListOf()
+            newEffects += this.effectJump
+            newEffects += this.effectSpeed
+            newEffects
         }
 
         bender.awaitExecution(this.type, SPRINT_OFF)

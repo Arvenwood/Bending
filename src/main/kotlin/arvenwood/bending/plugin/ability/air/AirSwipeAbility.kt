@@ -53,8 +53,7 @@ data class AirSwipeAbility(
     private val arcRadians: Double = Math.toRadians(this.arcDegrees)
     private val arcDegreesRadians: Double = Math.toRadians(this.arcIncrementDegrees)
 
-    private val particleEffect: ParticleEffect =
-        EffectService.get().createParticle(Elements.AIR, this.numParticles, AirConstants.VECTOR_0_2)
+    private val particleEffect: ParticleEffect = EffectService.get().createParticle(Elements.AIR, this.numParticles, AirConstants.VECTOR_0_2)
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context.require(StandardContext.player)

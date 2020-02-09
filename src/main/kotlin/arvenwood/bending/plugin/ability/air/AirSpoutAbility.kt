@@ -1,13 +1,17 @@
 package arvenwood.bending.plugin.ability.air
 
+import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
+import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.BenderService
+import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
+import arvenwood.bending.plugin.util.EpochTime
 import com.flowpowered.math.vector.Vector3d
 import kotlinx.coroutines.Job
 import ninja.leaping.configurate.ConfigurationNode
@@ -35,26 +39,22 @@ data class AirSpoutAbility(
 
     override val type: AbilityType<AirSpoutAbility> = AbilityTypes.AIR_SPOUT
 
-    private val particleEffect: ParticleEffect =
-        ParticleEffect.builder()
-            .type(ParticleTypes.CLOUD)
-            .quantity(3)
-            .offset(Vector3d(0.4, 0.4, 0.4))
-            .build()
+    private val particleEffect: ParticleEffect = EffectService.get().createParticle(Elements.AIR, 3, AirConstants.VECTOR_0_4)
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
-        val player: Player = context[player] ?: return ErrorNoTarget
+        val player: Player = context.player
+        val bender: Bender = context.bender
 
         context[animationTime] = System.currentTimeMillis()
         context[angle] = 0
 
-        val startTime: Long = System.currentTimeMillis()
-        val defer: Job = BenderService.get()[player.uniqueId].deferExecution(this.type, LEFT_CLICK)
+        val startTime: EpochTime = EpochTime.now()
+        val defer: Job = bender.deferExecution(LEFT_CLICK)
         abilityLoopUnsafe {
             if (player.isRemoved) {
                 return Success
             }
-            if (startTime + this.duration <= System.currentTimeMillis()) {
+            if (startTime.elapsedNow() >= this.duration) {
                 return Success
             }
             if (defer.isCompleted) {
@@ -90,7 +90,7 @@ data class AirSpoutAbility(
     }
 
     override fun cleanup(context: AbilityContext) {
-        val player = context[player] ?: return
+        val player: Player = context.player
         player.canFly = false
         player.isFlying = false
     }
@@ -99,18 +99,18 @@ data class AirSpoutAbility(
         var animationTime: Long by context.by(animationTime)
         var angle: Int by context.by(angle)
 
-        if (this.interval + animationTime <= System.currentTimeMillis()) {
+        if (EpochTime(animationTime).elapsedNow() >= this.interval) {
             animationTime = System.currentTimeMillis()
             val location: Location<World> = Location(highest.extent, playerLocation.x, highest.y, playerLocation.z)
 
-            var index = angle
-            val dy = min(playerLocation.y - highest.y, this.height)
+            var index: Int = angle
+            val dy: Double = min(playerLocation.y - highest.y, this.height)
             angle = if (angle >= 8) 0 else angle + 1
 
             var i = 1
             while (i <= dy) {
                 index = if (index >= 8) 0 else index + 1
-                val effectLoc = location.add(0.0, i.toDouble(), 0.0)
+                val effectLoc: Location<World> = location.add(0.0, i.toDouble(), 0.0)
                 effectLoc.spawnParticles(this.particleEffect)
                 i++
             }

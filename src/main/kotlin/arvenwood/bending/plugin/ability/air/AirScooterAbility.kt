@@ -42,8 +42,7 @@ data class AirScooterAbility(
 
     private val minVelocitySquared: Double = (this.speed * 0.3) * (this.speed * 0.3)
 
-    private val particleEffect: ParticleEffect
-        get() = EffectService.get().createParticle(Elements.AIR, 1, Vector3d.ZERO)
+    private val particleEffect: ParticleEffect = EffectService.get().createParticle(Elements.AIR, 1, Vector3d.ZERO)
 
     override fun preempt(context: AbilityContext, executionType: AbilityExecutionType) {
         val player: Player = context.require(StandardContext.player)
