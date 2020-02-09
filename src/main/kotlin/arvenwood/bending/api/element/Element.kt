@@ -1,5 +1,7 @@
 package arvenwood.bending.api.element
 
+import arvenwood.bending.api.util.catalog.CatalogTypeManager
+import arvenwood.bending.api.util.catalog.catalogTypeManager
 import org.spongepowered.api.CatalogType
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.text.format.TextColor
@@ -7,17 +9,7 @@ import org.spongepowered.api.util.ResettableBuilder
 
 interface Element : CatalogType {
 
-    companion object {
-
-        @JvmStatic
-        fun builder(): Builder = Sponge.getRegistry().createBuilder(Builder::class.java)
-
-        @JvmStatic
-        operator fun get(id: String): Element? = Sponge.getRegistry().getType(Element::class.java, id).orElse(null)
-
-        @JvmStatic
-        val all: Collection<Element> get() = Sponge.getRegistry().getAllOf(Element::class.java)
-    }
+    companion object : CatalogTypeManager<Element, Builder> by catalogTypeManager();
 
     override fun getId(): String
 

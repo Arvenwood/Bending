@@ -4,7 +4,7 @@ import arvenwood.bending.api.element.Element
 import org.spongepowered.api.text.format.TextColor
 import org.spongepowered.api.text.format.TextColors
 
-class SimpleElement(private val id: String, private val name: String, override val color: TextColor) : Element {
+data class SimpleElement(private val id: String, private val name: String, override val color: TextColor) : Element {
     override fun getId(): String = id
     override fun getName(): String = name
 

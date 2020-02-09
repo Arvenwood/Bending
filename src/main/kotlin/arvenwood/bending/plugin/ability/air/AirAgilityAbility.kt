@@ -2,8 +2,8 @@ package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.SPRINT_OFF
-import arvenwood.bending.api.ability.AbilityExecutionType.SPRINT_ON
+import arvenwood.bending.api.ability.AbilityExecutionTypes.SPRINT_OFF
+import arvenwood.bending.api.ability.AbilityExecutionTypes.SPRINT_ON
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.plugin.ability.AbilityTypes
 import ninja.leaping.configurate.ConfigurationNode

@@ -1,10 +1,8 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
-import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.ability.AbilityTypes

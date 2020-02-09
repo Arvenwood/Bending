@@ -4,9 +4,9 @@ import arvenwood.bending.api.ability.Ability
 import arvenwood.bending.api.ability.AbilityExecutionType
 import arvenwood.bending.api.ability.AbilityType
 import arvenwood.bending.api.element.Element
+import com.google.common.collect.Sets
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.text.Text
-import java.util.*
 
 data class SimpleAbilityType<out T : Ability<T>>(
     private val id: String,
@@ -50,7 +50,7 @@ data class SimpleAbilityType<out T : Ability<T>>(
         }
 
         override fun executionTypes(executionTypes: Set<AbilityExecutionType>): AbilityType.Builder<T> {
-            this.executionTypes = EnumSet.copyOf(executionTypes)
+            this.executionTypes = executionTypes.toCollection(Sets.newIdentityHashSet())
             return this
         }
 
@@ -73,7 +73,7 @@ data class SimpleAbilityType<out T : Ability<T>>(
             this.id = value.id
             this.name = value.name
             this.element = value.element
-            this.executionTypes = EnumSet.copyOf(value.executionTypes)
+            this.executionTypes = value.executionTypes.toCollection(Sets.newIdentityHashSet())
             this.instructions = value.instructions
             this.description = value.description
             this.loader = value::load

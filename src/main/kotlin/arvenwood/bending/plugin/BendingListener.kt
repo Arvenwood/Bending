@@ -2,13 +2,18 @@ package arvenwood.bending.plugin
 
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.Ability
-import arvenwood.bending.api.ability.AbilityExecutionType
-import arvenwood.bending.api.ability.AbilityExecutionType.*
+import arvenwood.bending.api.ability.AbilityExecutionTypes.FALL
+import arvenwood.bending.api.ability.AbilityExecutionTypes.JUMP
+import arvenwood.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
+import arvenwood.bending.api.ability.AbilityExecutionTypes.RIGHT_CLICK
+import arvenwood.bending.api.ability.AbilityExecutionTypes.SNEAK
+import arvenwood.bending.api.ability.AbilityExecutionTypes.SPRINT_OFF
+import arvenwood.bending.api.ability.AbilityExecutionTypes.SPRINT_ON
+import arvenwood.bending.api.ability.AbilityExecutionTypes.SWAP_HAND
 import arvenwood.bending.api.ability.AbilityType
 import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.util.get
 import arvenwood.bending.plugin.ability.AbilityTypes
-import arvenwood.bending.plugin.ability.air.AirAgilityAbility
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.Listener
@@ -35,7 +40,7 @@ class BendingListener {
     }
 
     private fun displayAbility(player: Player) {
-        val bender = BenderService.get()[player.uniqueId]
+        val bender: Bender = BenderService.get()[player.uniqueId]
         val type: AbilityType<Ability<*>> = bender.selectedAbility?.type ?: return
         val onCooldown: Boolean = bender.hasCooldown(type)
 

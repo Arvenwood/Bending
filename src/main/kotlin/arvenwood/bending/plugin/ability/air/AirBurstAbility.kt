@@ -1,8 +1,8 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.FALL
-import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
+import arvenwood.bending.api.ability.AbilityExecutionTypes.FALL
+import arvenwood.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.EffectService

@@ -1,7 +1,6 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.BenderService
@@ -21,8 +20,6 @@ import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 data class AirScooterAbility(
     override val cooldown: Long,

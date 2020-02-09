@@ -1,47 +1,29 @@
 package arvenwood.bending.api.ability
 
+import arvenwood.bending.api.util.catalog.CatalogTypeManager
+import arvenwood.bending.api.util.catalog.catalogTypeManager
+import org.spongepowered.api.CatalogType
+import org.spongepowered.api.util.ResettableBuilder
 import kotlin.coroutines.CoroutineContext
 
-enum class AbilityExecutionType : CoroutineContext.Element {
-    /**
-     * The ability is activated by punching.
-     */
-    LEFT_CLICK,
-    /**
-     * The ability is activated by interacting.
-     */
-    RIGHT_CLICK,
-    /**
-     * The ability is activated by switching items in the hands.
-     */
-    SWAP_HAND,
-    /**
-     * The ability is activated by jumping.
-     */
-    JUMP,
-    /**
-     * The ability is activated by sneaking.
-     */
-    SNEAK,
-    /**
-     * The ability is activated by sprinting.
-     */
-    SPRINT_ON,
-    /**
-     * The ability is activated by stopping sprint.
-     */
-    SPRINT_OFF,
-    /**
-     * The ability is activated by falling a certain distance.
-     * Fetch [StandardContext.fallDistance] from the context to get the distance.
-     */
-    FALL,
-    /**
-     * The ability is activated by combining multiple abilities.
-     */
-    COMBO;
+interface AbilityExecutionType : CatalogType, CoroutineContext.Element {
 
-    override val key: CoroutineContext.Key<*> get() = AbilityExecutionType
+    override val key: CoroutineContext.Key<AbilityExecutionType> get() = AbilityExecutionType
 
-    companion object CoroutineKey : CoroutineContext.Key<AbilityExecutionType>
+    companion object :
+        CatalogTypeManager<AbilityExecutionType, Builder> by catalogTypeManager(),
+        CoroutineContext.Key<AbilityExecutionType>
+
+    override fun getId(): String
+
+    override fun getName(): String
+
+    interface Builder : ResettableBuilder<AbilityExecutionType, Builder> {
+
+        fun id(id: String): Builder
+
+        fun name(name: String): Builder
+
+        fun build(): AbilityExecutionType
+    }
 }

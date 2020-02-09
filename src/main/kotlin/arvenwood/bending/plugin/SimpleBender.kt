@@ -7,14 +7,12 @@ import arvenwood.bending.api.event.SetCooldownEvent
 import arvenwood.bending.api.util.selectedSlotIndex
 import arvenwood.bending.plugin.ability.SimpleAbilityContext
 import arvenwood.bending.plugin.ability.SimpleAbilityJob
-import arvenwood.bending.plugin.util.enumMap
 import arvenwood.bending.plugin.util.table
 import com.google.common.collect.Table
 import kotlinx.coroutines.*
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.entity.living.player.Player
-import org.spongepowered.api.text.Text
 import java.util.*
 import kotlin.coroutines.*
 
@@ -23,7 +21,7 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
     private val runningMap = IdentityHashMap<Job, SimpleAbilityJob>()
     private val cooldownMap = IdentityHashMap<AbilityType<*>, Long>()
     private val waitingMap: Table<AbilityType<*>, AbilityExecutionType, Continuation<Unit>> =
-        table(IdentityHashMap()) { enumMap<AbilityExecutionType, Continuation<Unit>>() }
+        table(IdentityHashMap()) { IdentityHashMap<AbilityExecutionType, Continuation<Unit>>() }
 
     private val equipped: Array<Ability<*>?> = arrayOfNulls(size = 9)
 
@@ -83,7 +81,7 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
         // Set how the ability was initiated.
         context[StandardContext.executionType] = executionType
 
-        if (executionType == AbilityExecutionType.FALL) {
+        if (executionType == AbilityExecutionTypes.FALL) {
             context[StandardContext.fallDistance] = player.getOrElse(Keys.FALL_DISTANCE, 0F)
         }
 

@@ -1,10 +1,8 @@
 package arvenwood.bending.plugin.ability.earth
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.ErrorProtected
 import arvenwood.bending.api.ability.AbilityResult.Success
-import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.protection.BuildProtectionService
 import arvenwood.bending.api.service.TransientBlockService
 import arvenwood.bending.api.util.*

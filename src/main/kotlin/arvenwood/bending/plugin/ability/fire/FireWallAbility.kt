@@ -1,13 +1,11 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.direction
 import arvenwood.bending.api.ability.StandardContext.origin
 import arvenwood.bending.api.ability.StandardContext.player
-import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
@@ -25,8 +23,6 @@ import org.spongepowered.api.event.cause.entity.damage.source.DamageSources
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 import kotlin.math.max
-import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 data class FireWallAbility(
     override val cooldown: Long,

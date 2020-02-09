@@ -2,12 +2,10 @@ package arvenwood.bending.plugin.ability.earth
 
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
-import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
+import arvenwood.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
+import arvenwood.bending.api.ability.AbilityExecutionTypes.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.*
-import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.protection.BuildProtectionService
-import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.getTargetLocation
 import arvenwood.bending.plugin.ability.AbilityTypes
 import ninja.leaping.configurate.ConfigurationNode

@@ -2,6 +2,8 @@ package arvenwood.bending.plugin
 
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.Ability
+import arvenwood.bending.api.ability.AbilityExecutionType
+import arvenwood.bending.api.ability.AbilityExecutionTypes
 import arvenwood.bending.api.ability.AbilityType
 import arvenwood.bending.api.config.AbilityConfig
 import arvenwood.bending.api.config.AbilityConfigService
@@ -16,6 +18,7 @@ import arvenwood.bending.api.service.*
 import arvenwood.bending.api.util.registerModule
 import arvenwood.bending.api.util.setProvider
 import arvenwood.bending.plugin.ability.AbilityTypes
+import arvenwood.bending.plugin.ability.SimpleAbilityExecutionType
 import arvenwood.bending.plugin.ability.SimpleAbilityType
 import arvenwood.bending.plugin.ability.earth.EarthTunnelAbility
 import arvenwood.bending.plugin.ability.fire.FireShieldAbility
@@ -105,6 +108,7 @@ class Bending @Inject constructor(
 
         this.logger.info("Registering catalog modules...")
 
+        Sponge.getRegistry().registerBuilderSupplier(AbilityExecutionType.Builder::class.java, SimpleAbilityExecutionType::Builder)
         Sponge.getRegistry().registerBuilderSupplier(Element.Builder::class.java, SimpleElement::Builder)
         Sponge.getRegistry().registerBuilderSupplier(AbilityType.Builder::class.java) { SimpleAbilityType.Builder<Ability<*>>() }
 
@@ -112,6 +116,8 @@ class Bending @Inject constructor(
         Sponge.getRegistry().registerModule<Element>(ElementCatalogRegistryModule)
         Sponge.getRegistry().registerModule<BuildProtection>(BuildProtectionCatalogRegistryModule)
         Sponge.getRegistry().registerModule<PvpProtection>(PvpProtectionCatalogRegistryModule)
+
+        Sponge.getEventManager().registerListeners(this, CatalogRegistration)
     }
 
     @Listener
@@ -259,63 +265,5 @@ class Bending @Inject constructor(
         this.logger.info("Stopping tasks...")
 
         this.transientBlockService.stop()
-    }
-
-    @Listener
-    fun onRegisterElement(event: GameRegistryEvent.Register<Element>) {
-        // Register the classical elements.
-
-        event.register(Elements.WATER)
-        event.register(Elements.EARTH)
-        event.register(Elements.FIRE)
-        event.register(Elements.AIR)
-    }
-
-    @Listener
-    fun onRegisterAbilityType(event: GameRegistryEvent.Register<AbilityType<*>>) {
-        // Register the builtin abilities.
-
-        event.register(AbilityTypes.AIR_AGILITY)
-        event.register(AbilityTypes.AIR_BLAST)
-        event.register(AbilityTypes.AIR_BURST)
-        event.register(AbilityTypes.AIR_JUMP)
-        event.register(AbilityTypes.AIR_SCOOTER)
-        event.register(AbilityTypes.AIR_SHIELD)
-        event.register(AbilityTypes.AIR_SPOUT)
-        event.register(AbilityTypes.AIR_SWIPE)
-        event.register(AbilityTypes.AIR_TORNADO)
-
-        event.register(AbilityTypes.EARTH_TUNNEL)
-
-        event.register(AbilityTypes.FIRE_BLAST)
-        event.register(AbilityTypes.FIRE_COMBUSTION)
-        event.register(AbilityTypes.FIRE_JET)
-        event.register(AbilityTypes.FIRE_SHIELD)
-        event.register(AbilityTypes.FIRE_WALL)
-    }
-
-    @Listener
-    fun onRegisterBuildProtection(event: GameRegistryEvent.Register<BuildProtection>) {
-        // Register GriefDefender protection if found.
-        val griefdefender = GriefDefenderProtection.load()
-        if (griefdefender != null) {
-            if (GriefDefender.getCore().isProtectionModuleEnabled(Flags.BLOCK_PLACE)
-                && GriefDefender.getCore().isProtectionModuleEnabled(Flags.BLOCK_BREAK)) {
-                this.logger.info("GriefDefender found. Enabling build protection...")
-                event.register(griefdefender)
-            }
-        }
-    }
-
-    @Listener
-    fun onRegisterPvpProtection(event: GameRegistryEvent.Register<PvpProtection>) {
-        // Register GriefDefender protection if found.
-        val griefDefender = GriefDefenderProtection.load()
-        if (griefDefender != null) {
-            if (GriefDefender.getCore().isProtectionModuleEnabled(Flags.ENTITY_DAMAGE)) {
-                this.logger.info("GriefDefender found. Enabling pvp protection...")
-                event.register(griefDefender)
-            }
-        }
     }
 }

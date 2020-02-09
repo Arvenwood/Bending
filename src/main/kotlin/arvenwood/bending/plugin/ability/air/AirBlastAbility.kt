@@ -2,8 +2,8 @@ package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
-import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
+import arvenwood.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
+import arvenwood.bending.api.ability.AbilityExecutionTypes.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.affectedEntities
 import arvenwood.bending.api.ability.StandardContext.affectedLocations

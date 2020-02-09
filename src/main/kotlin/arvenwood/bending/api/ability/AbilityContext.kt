@@ -33,11 +33,6 @@ interface AbilityContext : CoroutineContext.Element {
     }
 }
 
-fun <E : Any> AbilityContext.with(key: AbilityContext.Key<E>, value: E): E {
-    this[key] = value
-    return value
-}
-
 fun <E : Any> AbilityContext.require(key: AbilityContext.Key<E>): E =
     this[key] ?: throw NoSuchElementException(key.id)
 

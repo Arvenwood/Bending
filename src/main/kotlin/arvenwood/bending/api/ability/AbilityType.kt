@@ -1,7 +1,6 @@
 package arvenwood.bending.api.ability
 
 import arvenwood.bending.api.element.Element
-import arvenwood.bending.plugin.ability.air.AirBurstAbility
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.CatalogType
 import org.spongepowered.api.Sponge
@@ -11,7 +10,7 @@ import kotlin.coroutines.CoroutineContext
 
 interface AbilityType<out T : Ability<T>> : CatalogType, CoroutineContext.Element {
 
-    companion object CoroutineKey : CoroutineContext.Key<AbilityType<Ability<*>>> {
+    companion object : CoroutineContext.Key<AbilityType<Ability<*>>> {
 
         @JvmStatic
         fun <T : Ability<T>> builder(): Builder<T> =

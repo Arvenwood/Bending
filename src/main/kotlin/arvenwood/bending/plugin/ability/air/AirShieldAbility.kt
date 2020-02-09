@@ -1,7 +1,6 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
@@ -23,8 +22,6 @@ import org.spongepowered.api.world.World
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
-import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 data class AirShieldAbility(
     override val cooldown: Long,

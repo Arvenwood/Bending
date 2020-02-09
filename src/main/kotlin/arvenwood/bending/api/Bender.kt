@@ -1,9 +1,6 @@
 package arvenwood.bending.api
 
-import arvenwood.bending.api.ability.Ability
-import arvenwood.bending.api.ability.AbilityExecutionType
-import arvenwood.bending.api.ability.AbilityJob
-import arvenwood.bending.api.ability.AbilityType
+import arvenwood.bending.api.ability.*
 import kotlinx.coroutines.Job
 import org.spongepowered.api.entity.living.player.Player
 

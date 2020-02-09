@@ -1,6 +1,10 @@
 package arvenwood.bending.plugin.ability
 
-import arvenwood.bending.api.ability.AbilityExecutionType.*
+import arvenwood.bending.api.ability.AbilityExecutionTypes.FALL
+import arvenwood.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
+import arvenwood.bending.api.ability.AbilityExecutionTypes.SNEAK
+import arvenwood.bending.api.ability.AbilityExecutionTypes.SPRINT_OFF
+import arvenwood.bending.api.ability.AbilityExecutionTypes.SPRINT_ON
 import arvenwood.bending.api.ability.AbilityType
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.plugin.ability.air.*

@@ -1,10 +1,9 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
+import arvenwood.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.player
-import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
@@ -20,8 +19,6 @@ import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 import kotlin.math.min
-import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 data class AirSpoutAbility(
     override val cooldown: Long,
