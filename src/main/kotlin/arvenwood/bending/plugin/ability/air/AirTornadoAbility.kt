@@ -5,8 +5,9 @@ import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.protection.BuildProtectionService
+import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.service.EffectService
-import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
@@ -79,7 +80,7 @@ data class AirTornadoAbility(
             origin = Location(origin.extent, origin.x, origin.y - 1.0 / 10.0 * currentHeight, origin.z)
 
             for (entity: Entity in origin.getNearbyEntities(currentHeight)) {
-                if (ProtectionService.get().isProtected(player, origin)) continue
+                if (PvpProtectionService.get().isProtected(player, entity)) continue
 
                 val y: Double = entity.location.y
                 if (y > origin.y && y < origin.y + currentHeight) {
@@ -132,7 +133,7 @@ data class AirTornadoAbility(
 
                 val effect: Location<World> = Location(origin.extent, x, y, z)
 
-                if (!ProtectionService.get().isProtected(player, effect)) {
+                if (!BuildProtectionService.get().isProtected(player, effect)) {
                     EffectService.get().createRandomParticle(Elements.AIR, this.particles)
                     if (Constants.RANDOM.nextInt(20) == 0) {
                         // Play the sounds every now and then.

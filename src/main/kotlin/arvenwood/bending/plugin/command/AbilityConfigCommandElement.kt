@@ -1,6 +1,7 @@
 package arvenwood.bending.plugin.command
 
 import arvenwood.bending.api.ability.AbilityType
+import arvenwood.bending.api.config.AbilityConfig
 import arvenwood.bending.api.config.AbilityConfigService
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.command.CommandSource
@@ -9,36 +10,26 @@ import org.spongepowered.api.command.args.CommandContext
 import org.spongepowered.api.command.args.CommandElement
 import org.spongepowered.api.text.Text
 
-fun abilityConfig(typeKey: Text, nameKey: Text): CommandElement =
-    AbilityConfigCommandElement(typeKey, nameKey)
+fun abilityConfig(key: Text, typeKey: Text): CommandElement =
+    AbilityConfigCommandElement(key, typeKey)
 
-private class AbilityConfigCommandElement(private val typeKey: Text, private val nameKey: Text) : CommandElement(typeKey) {
+private class AbilityConfigCommandElement(key: Text, private val typeKey: Text) : CommandElement(key) {
 
-    override fun parseValue(source: CommandSource, args: CommandArgs): Any? {
-        val type: AbilityType<*> = Sponge.getRegistry().getType(AbilityType::class.java, args.next()).orElse(null)
-            ?: throw args.createError(Text.of("Unknown ability type"))
-        val name: String = args.nextIfPresent().orElse("default")
+    override fun parse(source: CommandSource, args: CommandArgs, context: CommandContext) {
+        val type: AbilityType<*> = context.getOne<AbilityType<*>>(typeKey).orElse(null) ?: return
+        val configName: String = args.next()
 
-        return AbilityConfigService.get()[name, type]
-            ?: throw args.createError(Text.of("Unknown ability config '$name' for ability '${type.name}'"))
+        val config: AbilityConfig = AbilityConfigService.get()[configName, type]
+            ?: throw args.createError(Text.of("No config for ability '${type.name}' with name '$configName'"))
+
+        context.putArg(this.untranslatedKey!!, config)
     }
 
     override fun complete(src: CommandSource, args: CommandArgs, context: CommandContext): List<String> {
-        val next: String = args.nextIfPresent().orElse("")
-        if (next.isNotBlank()) {
-            println("all configs")
-            // Return all configs for this ability.
-            val type: AbilityType<*> = Sponge.getRegistry().getType(AbilityType::class.java, next).orElse(null)
-                ?: return emptyList()
-            return AbilityConfigService.get()[type].keys.toList()
-        } else {
-            println("all abilities")
-            // Otherwise return all registered abilities.
-            return Sponge.getRegistry().getAllOf(AbilityType::class.java).map { it.id }
-        }
+        val type: AbilityType<*> = context.getOne<AbilityType<*>>(typeKey).orElse(null) ?: return emptyList()
+
+        return AbilityConfigService.get()[type].keys.toList()
     }
 
-    override fun getUsage(src: CommandSource): Text {
-        return Text.of(this.typeKey, " ", this.nameKey)
-    }
+    override fun parseValue(source: CommandSource, args: CommandArgs): Any? = null
 }

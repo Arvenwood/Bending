@@ -4,6 +4,7 @@ import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.protection.BuildProtectionService
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
@@ -100,6 +101,8 @@ data class AirSwipeAbility(
         val affectedEntities = ArrayList<Entity>()
         abilityLoopUnsafe {
             val anySucceeded: Boolean = raycasts.advanceAll {
+                if (BuildProtectionService.get().isProtected(source, it)) return@advanceAll AbilityResult.ErrorProtected
+
                 affectEntities(source, affectedEntities, radius) { test: Entity ->
                     with(AirRaycast) {
                         pushEntity(source, test, false, pushFactor, pushFactor)
@@ -112,6 +115,8 @@ data class AirSwipeAbility(
                 if (Constants.RANDOM.nextInt(4) == 0) {
                     playSounds(SoundTypes.ENTITY_CREEPER_HURT, 0.5, 1.0)
                 }
+
+                return@advanceAll Success
             }
 
             if (!anySucceeded) {

@@ -3,7 +3,7 @@ package arvenwood.bending.plugin.ability.fire
 import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.player
-import arvenwood.bending.api.service.ProtectionService
+import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.util.getNearbyEntities
 import arvenwood.bending.api.util.getNearbyLocations
 import arvenwood.bending.api.util.spawnParticles
@@ -102,7 +102,7 @@ data class FireShieldAbility(
             }
 
             for (entity: Entity in player.location.getNearbyEntities(this.radius)) {
-                if (ProtectionService.get().isProtected(player, entity.location)) {
+                if (PvpProtectionService.get().isProtected(player, entity)) {
                     continue
                 } else if (entity is Living) {
                     if (player.uniqueId == entity.uniqueId) continue

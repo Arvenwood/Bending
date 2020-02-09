@@ -38,7 +38,7 @@ data class Raycast(
     @JvmField
     var location: Location<World> = this.origin
 
-    inline fun advance(block: Raycast.(Location<World>) -> Unit): AbilityResult {
+    inline fun advance(block: Raycast.(Location<World>) -> AbilityResult): AbilityResult {
         if (this.range > 0 && this.location.distanceSquared(this.origin) > this.rangeSquared) {
             return ErrorOutOfRange
         }
@@ -47,7 +47,10 @@ data class Raycast(
             return ErrorWallReached
         }
 
-        this.block(this.location)
+        val result: AbilityResult = this.block(this.location)
+        if (result != Success) {
+            return result
+        }
 
         this.location += this.direction * this.speedFactor
 
@@ -118,7 +121,7 @@ data class Raycast(
 /**
  * @return Whether any of the rays succeeded
  */
-inline fun Iterable<Raycast>.advanceAll(block: Raycast.(location: Location<World>) -> Unit): Boolean {
+inline fun Iterable<Raycast>.advanceAll(block: Raycast.(location: Location<World>) -> AbilityResult): Boolean {
     var successful = false
     for (projectile: Raycast in this) {
         val result: AbilityResult = projectile.advance { location: Location<World> ->

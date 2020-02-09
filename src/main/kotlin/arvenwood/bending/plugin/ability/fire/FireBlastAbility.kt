@@ -7,7 +7,7 @@ import arvenwood.bending.api.ability.StandardContext.currentLocation
 import arvenwood.bending.api.ability.StandardContext.direction
 import arvenwood.bending.api.ability.StandardContext.origin
 import arvenwood.bending.api.ability.StandardContext.player
-import arvenwood.bending.api.service.ProtectionService
+import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
@@ -102,7 +102,7 @@ data class FireBlastAbility(
         val player: Player = context.require(player)
 
         if (entity.uniqueId == player.uniqueId) return false
-        if (ProtectionService.get().isProtected(player, entity.location)) return false
+        if (PvpProtectionService.get().isProtected(player, entity)) return false
 
         val direction: Vector3d = context.require(direction)
 

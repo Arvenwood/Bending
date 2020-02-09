@@ -3,7 +3,7 @@ package arvenwood.bending.plugin.ability.fire
 import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
-import arvenwood.bending.api.service.ProtectionService
+import arvenwood.bending.api.protection.BuildProtectionService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.ability.AbilityTypes
 import com.flowpowered.math.vector.Vector3d
@@ -50,8 +50,8 @@ data class FireCombustionAbility(
     }
 
     override fun validate(context: AbilityContext): Boolean {
-        val player = context.require(StandardContext.player)
-        return !ProtectionService.get().isProtected(player, player.location)
+        val player: Player = context.require(StandardContext.player)
+        return !BuildProtectionService.get().isProtected(player, player.location)
     }
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {

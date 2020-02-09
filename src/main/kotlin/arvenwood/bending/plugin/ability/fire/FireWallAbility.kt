@@ -6,7 +6,8 @@ import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.direction
 import arvenwood.bending.api.ability.StandardContext.origin
 import arvenwood.bending.api.ability.StandardContext.player
-import arvenwood.bending.api.service.ProtectionService
+import arvenwood.bending.api.protection.BuildProtectionService
+import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
@@ -75,7 +76,7 @@ data class FireWallAbility(
             }
             if (startTime + damageTick * damageInterval <= curTime) {
                 damageTick++
-                damage(origin, locations)
+                damage(player, origin, locations)
             }
         }
     }
@@ -89,7 +90,7 @@ data class FireWallAbility(
             for (j: Int in -this.height..this.height) {
                 val location: Location<World> = origin.add(vertical.mul(j.toDouble())).add(horizontal.mul(i.toDouble()))
 
-                if (ProtectionService.get().isProtected(player, location)) continue
+                if (BuildProtectionService.get().isProtected(player, location)) continue
 
                 if (location !in result) {
                     result += location
@@ -123,10 +124,10 @@ data class FireWallAbility(
         }
     }
 
-    private fun damage(origin: Location<World>, locations: List<Location<World>>) {
+    private fun damage(source: Player, origin: Location<World>, locations: List<Location<World>>) {
         val radius: Int = max(this.width, this.height) + 1
         for (entity: Entity in origin.getNearbyEntities(radius.toDouble())) {
-            if (entity is Player && ProtectionService.get().isProtected(entity, entity.location)) {
+            if (entity is Player && PvpProtectionService.get().isProtected(source, entity)) {
                 // Can't fight here!
                 continue
             }

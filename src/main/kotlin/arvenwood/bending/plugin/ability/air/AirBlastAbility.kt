@@ -11,6 +11,7 @@ import arvenwood.bending.api.ability.StandardContext.currentLocation
 import arvenwood.bending.api.ability.StandardContext.direction
 import arvenwood.bending.api.ability.StandardContext.origin
 import arvenwood.bending.api.element.Elements
+import arvenwood.bending.api.protection.BuildProtectionService
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
@@ -137,6 +138,8 @@ data class AirBlastAbility(
             }
 
             val result: AbilityResult = raycast.advance {
+                if (BuildProtectionService.get().isProtected(player, it)) return@advance ErrorProtected
+
                 affectLocations(player, affectedLocations, radius) { test: Location<World> ->
                     AirRaycast.extinguishFlames(test)
                             || (canCoolLava && AirRaycast.coolLava(test))
@@ -144,7 +147,7 @@ data class AirBlastAbility(
                             || AirRaycast.toggleLever(test)
                 }
                 affectEntities(player, affectedEntities, radius) { test: Entity ->
-                    with (AirRaycast) {
+                    with(AirRaycast) {
                         pushEntity(player, test, canPushSelf, pushFactorSelf, pushFactorOther)
                     }
 
@@ -155,6 +158,8 @@ data class AirBlastAbility(
                 if (Constants.RANDOM.nextInt(4) == 0) {
                     playSounds(SoundTypes.ENTITY_CREEPER_HURT, 0.5, 1.0)
                 }
+
+                return@advance Success
             }
 
             if (result != Success) {
