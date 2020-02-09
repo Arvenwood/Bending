@@ -120,8 +120,8 @@ data class AirBurstAbility(
     ): AbilityResult {
         val raycasts: List<Raycast> = createRaycasts(origin, thetaMin, thetaMax, targetDirection, maxAngle)
 
-        val affectedLocations = ArrayList<Location<World>>()
-        val affectedEntities = ArrayList<Entity>()
+        val affectedLocations = HashSet<Location<World>>()
+        val affectedEntities = HashSet<Entity>()
         abilityLoopUnsafe {
             val anySucceeded: Boolean = raycasts.advanceAll {
                 if (BuildProtectionService.get().isProtected(source, it)) return@advanceAll AbilityResult.ErrorProtected

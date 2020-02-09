@@ -98,7 +98,7 @@ data class AirSwipeAbility(
     ): AbilityResult {
         val raycasts: List<Raycast> = createRaycasts(origin, source.headDirection.normalize())
 
-        val affectedEntities = ArrayList<Entity>()
+        val affectedEntities = HashSet<Entity>()
         abilityLoopUnsafe {
             val anySucceeded: Boolean = raycasts.advanceAll {
                 if (BuildProtectionService.get().isProtected(source, it)) return@advanceAll AbilityResult.ErrorProtected
