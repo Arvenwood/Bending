@@ -9,6 +9,8 @@ import arvenwood.bending.api.protection.BuildProtectionService
 import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
+import arvenwood.bending.plugin.Constants
+import arvenwood.bending.plugin.ability.AbilityTypes
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.block.BlockTypes
@@ -33,45 +35,17 @@ data class AirShieldAbility(
     val numStreams: Int,
     val particles: Int
 ) : Ability<AirShieldAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        duration = node.getNode("duration").long,
+        speed = node.getNode("speed").double,
+        maxRadius = node.getNode("maxRadius").double,
+        initialRadius = node.getNode("initialRadius").double,
+        numStreams = node.getNode("numStreams").int,
+        particles = node.getNode("particles").int
+    )
 
-    override val type: AbilityType<AirShieldAbility> get() = AirShieldAbility
-
-    companion object : AbstractAbilityType<AirShieldAbility>(
-        element = Elements.Air,
-        executionTypes = enumSetOf(SNEAK),
-        id = "bending:air_shield",
-        name = "AirShield"
-    ) {
-        override fun load(node: ConfigurationNode): AirShieldAbility = AirShieldAbility(
-            cooldown = node.getNode("cooldown").long,
-            duration = node.getNode("duration").long,
-            speed = node.getNode("speed").double,
-            maxRadius = node.getNode("maxRadius").double,
-            initialRadius = node.getNode("initialRadius").double,
-            numStreams = node.getNode("numStreams").int,
-            particles = node.getNode("particles").int
-        )
-
-        @JvmStatic
-        private fun createAngleDegMap(maxRadius: Double, numStreams: Int): Map<Int, Int> {
-            val angles = HashMap<Int, Int>()
-            var angle = 0
-            val di: Int = (maxRadius * 2 / numStreams).toInt()
-            for (i: Int in -maxRadius.toInt() + di until maxRadius.toInt() step di) {
-                angles[i] = angle
-                angle += 90
-                if (angle == 360) angle = 0
-            }
-            return angles
-        }
-
-        private val COS_50_DEG: Double = cos(Math.toRadians(50.0))
-        private val SIN_50_DEG: Double = sin(Math.toRadians(50.0))
-    }
-
-    private val random: Random = java.util.Random().asKotlinRandom()
-
-    private val speedRadians: Double = Math.toRadians(this.speed)
+    override val type: AbilityType<AirShieldAbility> = AbilityTypes.AIR_SHIELD
 
     private val angleDegMap: Map<Int, Int> = createAngleDegMap(this.maxRadius, this.numStreams)
 
@@ -137,8 +111,8 @@ data class AirShieldAbility(
 
             val effect: Location<World> = origin.setPosition(Vector3d(x, y, z))
             if (!BuildProtectionService.get().isProtected(player, effect)) {
-                effect.spawnParticles(EffectService.get().createRandomParticle(Elements.Air, this.particles))
-                if (this.random.nextInt(4) == 0) {
+                effect.spawnParticles(EffectService.get().createRandomParticle(Elements.AIR, this.particles))
+                if (Constants.RANDOM.nextInt(4) == 0) {
                     effect.extent.playSound(SoundTypes.ENTITY_CREEPER_HURT, effect.position, 0.5, 1.0)
                 }
             }
@@ -154,5 +128,24 @@ data class AirShieldAbility(
         if (radius > this.maxRadius) {
             radius = this.maxRadius
         }
+    }
+
+    companion object {
+
+        @JvmStatic
+        private fun createAngleDegMap(maxRadius: Double, numStreams: Int): Map<Int, Int> {
+            val angles = HashMap<Int, Int>()
+            var angle = 0
+            val di: Int = (maxRadius * 2 / numStreams).toInt()
+            for (i: Int in -maxRadius.toInt() + di until maxRadius.toInt() step di) {
+                angles[i] = angle
+                angle += 90
+                if (angle == 360) angle = 0
+            }
+            return angles
+        }
+
+        private val COS_50_DEG: Double = cos(Math.toRadians(50.0))
+        private val SIN_50_DEG: Double = sin(Math.toRadians(50.0))
     }
 }

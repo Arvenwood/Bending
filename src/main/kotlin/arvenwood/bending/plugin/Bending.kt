@@ -15,11 +15,14 @@ import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.service.*
 import arvenwood.bending.api.util.registerModule
 import arvenwood.bending.api.util.setProvider
-import arvenwood.bending.plugin.ability.air.*
+import arvenwood.bending.plugin.ability.AbilityTypes
+import arvenwood.bending.plugin.ability.SimpleAbilityType
 import arvenwood.bending.plugin.ability.earth.EarthTunnelAbility
-import arvenwood.bending.plugin.ability.fire.*
+import arvenwood.bending.plugin.ability.fire.FireShieldAbility
+import arvenwood.bending.plugin.ability.fire.FireWallAbility
 import arvenwood.bending.plugin.command.abilityConfig
 import arvenwood.bending.plugin.config.SimpleAbilityConfigService
+import arvenwood.bending.plugin.element.SimpleElement
 import arvenwood.bending.plugin.protection.GriefDefenderProtection
 import arvenwood.bending.plugin.protection.SimpleBuildProtectionService
 import arvenwood.bending.plugin.protection.SimplePvpProtectionService
@@ -101,6 +104,9 @@ class Bending @Inject constructor(
             .copyToFile(this.abilitiesDir.resolve("default.conf"), false, true)
 
         this.logger.info("Registering catalog modules...")
+
+        Sponge.getRegistry().registerBuilderSupplier(Element.Builder::class.java, SimpleElement::Builder)
+        Sponge.getRegistry().registerBuilderSupplier(AbilityType.Builder::class.java) { SimpleAbilityType.Builder<Ability<*>>() }
 
         Sponge.getRegistry().registerModule<AbilityType<*>>(AbilityTypeCatalogRegistryModule)
         Sponge.getRegistry().registerModule<Element>(ElementCatalogRegistryModule)
@@ -259,33 +265,33 @@ class Bending @Inject constructor(
     fun onRegisterElement(event: GameRegistryEvent.Register<Element>) {
         // Register the classical elements.
 
-        event.register(Elements.Water)
-        event.register(Elements.Earth)
-        event.register(Elements.Fire)
-        event.register(Elements.Air)
+        event.register(Elements.WATER)
+        event.register(Elements.EARTH)
+        event.register(Elements.FIRE)
+        event.register(Elements.AIR)
     }
 
     @Listener
     fun onRegisterAbilityType(event: GameRegistryEvent.Register<AbilityType<*>>) {
         // Register the builtin abilities.
 
-        event.register(AirAgilityAbility)
-        event.register(AirBlastAbility)
-        event.register(AirBurstAbility)
-        event.register(AirJumpAbility)
-        event.register(AirScooterAbility)
-        event.register(AirShieldAbility)
-        event.register(AirSpoutAbility)
-        event.register(AirSwipeAbility)
-        event.register(AirTornadoAbility)
+        event.register(AbilityTypes.AIR_AGILITY)
+        event.register(AbilityTypes.AIR_BLAST)
+        event.register(AbilityTypes.AIR_BURST)
+        event.register(AbilityTypes.AIR_JUMP)
+        event.register(AbilityTypes.AIR_SCOOTER)
+        event.register(AbilityTypes.AIR_SHIELD)
+        event.register(AbilityTypes.AIR_SPOUT)
+        event.register(AbilityTypes.AIR_SWIPE)
+        event.register(AbilityTypes.AIR_TORNADO)
 
-        event.register(EarthTunnelAbility)
+        event.register(AbilityTypes.EARTH_TUNNEL)
 
-        event.register(CombustionAbility)
-        event.register(FireBlastAbility)
-        event.register(FireJetAbility)
-        event.register(FireShieldAbility)
-        event.register(FireWallAbility)
+        event.register(AbilityTypes.FIRE_BLAST)
+        event.register(AbilityTypes.FIRE_COMBUSTION)
+        event.register(AbilityTypes.FIRE_JET)
+        event.register(AbilityTypes.FIRE_SHIELD)
+        event.register(AbilityTypes.FIRE_WALL)
     }
 
     @Listener

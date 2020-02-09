@@ -7,6 +7,7 @@ import arvenwood.bending.api.ability.AbilityExecutionType.*
 import arvenwood.bending.api.ability.AbilityType
 import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.util.get
+import arvenwood.bending.plugin.ability.AbilityTypes
 import arvenwood.bending.plugin.ability.air.AirAgilityAbility
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.entity.living.player.Player
@@ -114,7 +115,7 @@ class BendingListener {
         val bender: Bender = BenderService.get()[player.uniqueId]
         val ability: Ability<*> = bender.selectedAbility ?: return
 
-        if (ability.type === AirAgilityAbility) {
+        if (ability.type === AbilityTypes.AIR_AGILITY) {
             event.isCancelled = true
             return
         }

@@ -1,15 +1,14 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.player
-import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.ProtectionService
-import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.getNearbyEntities
 import arvenwood.bending.api.util.getNearbyLocations
 import arvenwood.bending.api.util.spawnParticles
+import arvenwood.bending.plugin.Constants
+import arvenwood.bending.plugin.ability.AbilityTypes
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.block.BlockTypes
@@ -25,8 +24,6 @@ import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 data class FireShieldAbility(
     override val cooldown: Long,
@@ -34,35 +31,25 @@ data class FireShieldAbility(
     val radius: Double,
     val fireTicks: Int
 ) : Ability<FireShieldAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        duration = node.getNode("duration").long,
+        radius = node.getNode("radius").double,
+        fireTicks = node.getNode("fireTicks").int
+    )
 
-    override val type: AbilityType<FireShieldAbility> = FireShieldAbility
-
-    companion object : AbstractAbilityType<FireShieldAbility>(
-        element = Elements.Fire,
-        executionTypes = enumSetOf(SNEAK),
-        id = "bending:fire_shield",
-        name = "FireShield"
-    ) {
-        override fun load(node: ConfigurationNode): FireShieldAbility = FireShieldAbility(
-            cooldown = node.getNode("cooldown").long,
-            duration = node.getNode("duration").long,
-            radius = node.getNode("radius").double,
-            fireTicks = node.getNode("fireTicks").int
-        )
-    }
-
-    private val random: Random = java.util.Random().asKotlinRandom()
-
-    private val particleSmoke: ParticleEffect = ParticleEffect.builder()
-        .type(ParticleTypes.SMOKE)
-        .quantity(1)
-        .offset(Vector3d.ZERO)
-        .build()
+    override val type: AbilityType<FireShieldAbility> = AbilityTypes.FIRE_SHIELD
 
     private val particleFlame: ParticleEffect = ParticleEffect.builder()
         .type(ParticleTypes.FLAME)
         .quantity(1)
         .offset(Vector3d(0.1, 0.1, 0.1))
+        .build()
+
+    private val particleSmoke: ParticleEffect = ParticleEffect.builder()
+        .type(ParticleTypes.SMOKE)
+        .quantity(1)
+        .offset(Vector3d.ZERO)
         .build()
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
@@ -89,13 +76,13 @@ data class FireShieldAbility(
                         this.radius / 1.5 * sin(rPhi) * sin(rTheta)
                     )
 
-                    if (this.random.nextInt(6) == 0) {
+                    if (Constants.RANDOM.nextInt(6) == 0) {
                         displayLoc.spawnParticles(this.particleFlame)
                     }
-                    if (this.random.nextInt(4) == 0) {
+                    if (Constants.RANDOM.nextInt(4) == 0) {
                         displayLoc.spawnParticles(this.particleSmoke)
                     }
-                    if (this.random.nextInt(7) == 0) {
+                    if (Constants.RANDOM.nextInt(7) == 0) {
                         // Play fire bending sound, every now and then.
                         player.world.playSound(SoundTypes.BLOCK_FIRE_AMBIENT, player.position, 0.5, 1.0)
                     }

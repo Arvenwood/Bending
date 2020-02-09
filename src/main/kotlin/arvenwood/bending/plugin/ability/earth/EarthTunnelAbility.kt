@@ -8,6 +8,8 @@ import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.protection.BuildProtectionService
 import arvenwood.bending.api.service.TransientBlockService
 import arvenwood.bending.api.util.*
+import arvenwood.bending.plugin.ability.AbilityTypes
+import arvenwood.bending.plugin.util.BlockStates
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.block.BlockTypes
@@ -30,30 +32,20 @@ data class EarthTunnelAbility(
     val radius: Double,
     val maxRadius: Double
 ) : Ability<EarthTunnelAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        revertTime = node.getNode("revertTime").long,
+        revert = node.getNode("revert").boolean,
+        dropLootIfNotRevert = node.getNode("dropLootIfNotRevert").boolean,
+        interval = node.getNode("interval").long,
+        blocksPerInterval = node.getNode("blocksPerInterval").int,
+        ignoreOres = node.getNode("ignoreOres").boolean,
+        range = node.getNode("range").double,
+        radius = node.getNode("radius").double,
+        maxRadius = node.getNode("maxRadius").double
+    )
 
-    override val type: AbilityType<EarthTunnelAbility> = EarthTunnelAbility
-
-    companion object : AbstractAbilityType<EarthTunnelAbility>(
-        element = Elements.Earth,
-        executionTypes = enumSetOf(SNEAK),
-        id = "bending:earth_tunnel",
-        name = "EarthTunnel"
-    ) {
-        override fun load(node: ConfigurationNode): EarthTunnelAbility = EarthTunnelAbility(
-            cooldown = node.getNode("cooldown").long,
-            revertTime = node.getNode("revertTime").long,
-            revert = node.getNode("revert").boolean,
-            dropLootIfNotRevert = node.getNode("dropLootIfNotRevert").boolean,
-            interval = node.getNode("interval").long,
-            blocksPerInterval = node.getNode("blocksPerInterval").int,
-            ignoreOres = node.getNode("ignoreOres").boolean,
-            range = node.getNode("range").double,
-            radius = node.getNode("radius").double,
-            maxRadius = node.getNode("maxRadius").double
-        )
-
-        private const val DEG_20_IN_RAD: Double = 0.3490658504
-    }
+    override val type: AbilityType<EarthTunnelAbility> = AbilityTypes.EARTH_TUNNEL
 
     override fun prepare(player: Player, context: AbilityContext) {
         context[StandardContext.origin] = player.getTargetLocation(this.range)
@@ -128,5 +120,9 @@ data class EarthTunnelAbility(
                 }
             }
         }
+    }
+
+    companion object {
+        private const val DEG_20_IN_RAD: Double = 0.3490658504
     }
 }

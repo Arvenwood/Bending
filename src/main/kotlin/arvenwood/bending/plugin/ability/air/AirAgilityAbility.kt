@@ -2,15 +2,13 @@ package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.*
-import arvenwood.bending.api.ability.AbilityResult.*
-import arvenwood.bending.api.element.Elements
-import arvenwood.bending.api.util.enumSetOf
-import arvenwood.bending.api.util.isSprinting
+import arvenwood.bending.api.ability.AbilityExecutionType.SPRINT_OFF
+import arvenwood.bending.api.ability.AbilityExecutionType.SPRINT_ON
+import arvenwood.bending.api.ability.AbilityResult.Success
+import arvenwood.bending.plugin.ability.AbilityTypes
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.effect.potion.PotionEffect
-import org.spongepowered.api.effect.potion.PotionEffectTypes
 import org.spongepowered.api.effect.potion.PotionEffectTypes.JUMP_BOOST
 import org.spongepowered.api.effect.potion.PotionEffectTypes.SPEED
 import org.spongepowered.api.entity.living.player.Player
@@ -20,21 +18,13 @@ data class AirAgilityAbility(
     val jumpPower: Int,
     val speedPower: Int
 ) : Ability<AirAgilityAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        jumpPower = node.getNode("jumpPower").int,
+        speedPower = node.getNode("speedPower").int
+    )
 
-    override val type: AbilityType<AirAgilityAbility> = AirAgilityAbility
-
-    companion object : AbstractAbilityType<AirAgilityAbility>(
-        element = Elements.Air,
-        executionTypes = enumSetOf(SPRINT_ON, SPRINT_OFF),
-        id = "bending:air_agility",
-        name = "AirAgility"
-    ) {
-        override fun load(node: ConfigurationNode): AirAgilityAbility = AirAgilityAbility(
-            cooldown = node.getNode("cooldown").long,
-            jumpPower = node.getNode("jumpPower").int,
-            speedPower = node.getNode("speedPower").int
-        )
-    }
+    override val type: AbilityType<AirAgilityAbility> = AbilityTypes.AIR_AGILITY
 
     private val effectJump: PotionEffect =
         PotionEffect.builder()
@@ -67,7 +57,7 @@ data class AirAgilityAbility(
             effects
         }
 
-        bender.awaitExecution(AirAgilityAbility, SPRINT_OFF)
+        bender.awaitExecution(this.type, SPRINT_OFF)
 
         player.transform(Keys.POTION_EFFECTS) { effects: List<PotionEffect>? ->
             effects.orEmpty().filterNot {

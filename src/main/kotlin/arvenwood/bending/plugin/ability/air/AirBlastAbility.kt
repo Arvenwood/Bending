@@ -14,6 +14,8 @@ import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
+import arvenwood.bending.plugin.Constants
+import arvenwood.bending.plugin.ability.AbilityTypes
 import arvenwood.bending.plugin.action.AirProjectile
 import com.flowpowered.math.vector.Vector3d
 import kotlinx.coroutines.Job
@@ -23,8 +25,6 @@ import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
-import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 data class AirBlastAbility(
     override val cooldown: Long,
@@ -41,38 +41,26 @@ data class AirBlastAbility(
     val numParticles: Int,
     val selectRange: Double
 ) : Ability<AirBlastAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        range = node.getNode("range").double,
+        speed = node.getNode("speed").double,
+        radius = node.getNode("radius").double,
+        damage = node.getNode("damage").double,
+        pushFactorSelf = node.getNode("pushFactor").double,
+        pushFactorOther = node.getNode("pushFactorOther").double,
+        canFlickLevers = node.getNode("canFlickLevers").boolean,
+        canOpenDoors = node.getNode("canOpenDoors").boolean,
+        canPressButtons = node.getNode("canPressButtons").boolean,
+        canCoolLava = node.getNode("canCoolLava").boolean,
+        numParticles = node.getNode("numParticles").int,
+        selectRange = node.getNode("selectRange").double
+    )
 
-    override val type: AbilityType<AirBlastAbility> get() = AirBlastAbility
-
-    companion object : AbstractAbilityType<AirBlastAbility>(
-        element = Elements.Air,
-        executionTypes = enumSetOf(LEFT_CLICK, SNEAK),
-        id = "bending:air_blast",
-        name = "AirBlast"
-    ) {
-        override fun load(node: ConfigurationNode): AirBlastAbility = AirBlastAbility(
-            cooldown = node.getNode("cooldown").long,
-            range = node.getNode("range").double,
-            speed = node.getNode("speed").double,
-            radius = node.getNode("radius").double,
-            damage = node.getNode("damage").double,
-            pushFactorSelf = node.getNode("pushFactor").double,
-            pushFactorOther = node.getNode("pushFactorOther").double,
-            canFlickLevers = node.getNode("canFlickLevers").boolean,
-            canOpenDoors = node.getNode("canOpenDoors").boolean,
-            canPressButtons = node.getNode("canPressButtons").boolean,
-            canCoolLava = node.getNode("canCoolLava").boolean,
-            numParticles = node.getNode("numParticles").int,
-            selectRange = node.getNode("selectRange").double
-        )
-    }
-
-    private val speedFactor: Double = this.speed * (50 / 1000.0)
-
-    private val random: Random = java.util.Random().asKotlinRandom()
+    override val type: AbilityType<AirBlastAbility> = AbilityTypes.AIR_BLAST
 
     private val particleEffect: ParticleEffect =
-        EffectService.get().createParticle(Elements.Air, this.numParticles, AirConstants.VECTOR_0_275)
+        EffectService.get().createParticle(Elements.AIR, this.numParticles, AirConstants.VECTOR_0_275)
 
     override fun prepare(player: Player, context: AbilityContext) {
         context[affectedLocations] = HashSet()
@@ -98,7 +86,7 @@ data class AirBlastAbility(
         context[StandardContext.origin] = origin
 
         val bender: Bender = context.require(StandardContext.bender)
-        val defer: Job = bender.deferExecution(AirBlastAbility, LEFT_CLICK)
+        val defer: Job = bender.deferExecution(this.type, LEFT_CLICK)
         abilityLoop {
             if (player.isRemoved) {
                 defer.cancel()
@@ -109,7 +97,7 @@ data class AirBlastAbility(
                 return Success
             }
 
-            origin.spawnParticles(EffectService.get().createRandomParticle(Elements.Air, 4))
+            origin.spawnParticles(EffectService.get().createRandomParticle(Elements.AIR, 4))
 
             if (defer.isCompleted) {
                 if (defer.isCancelled) {
@@ -156,7 +144,7 @@ data class AirBlastAbility(
             val result: AbilityResult = projectile.advance {
                 projectile.affectBlocks(player, affectedLocations)
                 projectile.affectEntities(player, affectedEntities, canPushSelf)
-                projectile.visualize(this.particleEffect, this.random.nextInt(4) == 0)
+                projectile.visualize(this.particleEffect, Constants.RANDOM.nextInt(4) == 0)
             }
 
             if (result != Success) {

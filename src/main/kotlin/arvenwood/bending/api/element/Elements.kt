@@ -1,23 +1,36 @@
 package arvenwood.bending.api.element
 
-import org.spongepowered.api.text.format.TextColor
 import org.spongepowered.api.text.format.TextColors
 
 object Elements {
 
-    object Water : AbstractElement("bending:water", "Water Element") {
-        override val color: TextColor = TextColors.AQUA
-    }
+    val WATER: Element = Element.builder()
+        .id("bending:water")
+        .name("Water")
+        .color(TextColors.AQUA)
+        .build()
 
-    object Earth : AbstractElement("bending:earth", "Earth Element") {
-        override val color: TextColor = TextColors.GREEN
-    }
+    val EARTH: Element = Element.builder()
+        .id("bending:earth")
+        .name("Earth")
+        .color(TextColors.GREEN)
+        .build()
 
-    object Fire : AbstractElement("bending:fire", "Fire Element") {
-        override val color: TextColor = TextColors.RED
-    }
+    val FIRE: Element = Element.builder()
+        .id("bending:fire")
+        .name("Fire")
+        .color(TextColors.RED)
+        .build()
 
-    object Air : AbstractElement("bending:air", "Air Element") {
-        override val color: TextColor = TextColors.GRAY
-    }
+    val AIR: Element = Element.builder()
+        .id("bending:air")
+        .name("Air")
+        .color(TextColors.GRAY)
+        .build()
+
+    val CHI: Element = Element.builder()
+        .id("bending:chi")
+        .name("Chi")
+        .color(TextColors.GOLD)
+        .build()
 }

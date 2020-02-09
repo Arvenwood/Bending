@@ -1,11 +1,14 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.*
+import arvenwood.bending.api.ability.AbilityExecutionType.FALL
+import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
+import arvenwood.bending.plugin.Constants
+import arvenwood.bending.plugin.ability.AbilityTypes
 import arvenwood.bending.plugin.action.AirProjectile
 import arvenwood.bending.plugin.action.advanceAll
 import arvenwood.bending.plugin.util.forExclusive
@@ -19,8 +22,6 @@ import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 data class AirBurstAbility(
     override val cooldown: Long,
@@ -36,40 +37,26 @@ data class AirBurstAbility(
     val anglePhi: Double,
     val maxConeDegrees: Double = 30.0
 ) : Ability<AirBurstAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        chargeTime = node.getNode("chargeTime").long,
+        blastRadius = node.getNode("blastRadius").double,
+        damage = node.getNode("damage").double,
+        pushFactor = node.getNode("pushFactor").double,
+        range = node.getNode("range").double,
+        speed = node.getNode("speed").double,
+        fallThreshold = node.getNode("fallThreshold").double,
+        numSneakParticles = node.getNode("numSneakParticles").int,
+        angleTheta = node.getNode("angleTheta").double,
+        anglePhi = node.getNode("anglePhi").double
+    )
 
-    override val type: AbilityType<AirBurstAbility> = AirBurstAbility
-
-    companion object : AbstractAbilityType<AirBurstAbility>(
-        element = Elements.Air,
-        executionTypes = enumSetOf(LEFT_CLICK, SNEAK, FALL),
-        id = "bending:air_burst",
-        name = "AirBurst"
-    ) {
-        override fun load(node: ConfigurationNode): AirBurstAbility = AirBurstAbility(
-            cooldown = node.getNode("cooldown").long,
-            chargeTime = node.getNode("chargeTime").long,
-            blastRadius = node.getNode("blastRadius").double,
-            damage = node.getNode("damage").double,
-            pushFactor = node.getNode("pushFactor").double,
-            range = node.getNode("range").double,
-            speed = node.getNode("speed").double,
-            fallThreshold = node.getNode("fallThreshold").double,
-            numSneakParticles = node.getNode("numSneakParticles").int,
-            angleTheta = node.getNode("angleTheta").double,
-            anglePhi = node.getNode("anglePhi").double
-        )
-    }
-
-    private val random: Random = java.util.Random().asKotlinRandom()
+    override val type: AbilityType<AirBurstAbility> = AbilityTypes.AIR_BURST
 
     private val particleEffect: ParticleEffect =
-        EffectService.get().createParticle(Elements.Air, this.numSneakParticles, AirConstants.VECTOR_0_275)
+        EffectService.get().createParticle(Elements.AIR, this.numSneakParticles, AirConstants.VECTOR_0_275)
 
     private val maxConeRadians: Double = Math.toRadians(this.maxConeDegrees)
-
-    override fun prepare(player: Player, context: AbilityContext) {
-
-    }
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context.require(StandardContext.player)
@@ -98,7 +85,7 @@ data class AirBurstAbility(
                     }
 
                     if (charged) {
-                        player.eyeLocation.spawnParticles(EffectService.get().createRandomParticle(Elements.Air, this.numSneakParticles))
+                        player.eyeLocation.spawnParticles(EffectService.get().createRandomParticle(Elements.AIR, this.numSneakParticles))
                     } else {
                         player.eyeLocation.spawnParticles(AirConstants.EXTINGUISH_EFFECT)
                     }
@@ -120,7 +107,7 @@ data class AirBurstAbility(
             val anySucceeded: Boolean = projectiles.advanceAll { projectile: AirProjectile, _: Location<World> ->
                 projectile.affectBlocks(source, affectedLocations)
                 projectile.affectEntities(source, affectedEntities, false)
-                projectile.visualize(this.particleEffect, this.random.nextInt(9) == 0)
+                projectile.visualize(this.particleEffect, Constants.RANDOM.nextInt(9) == 0)
             }
 
             if (!anySucceeded) {

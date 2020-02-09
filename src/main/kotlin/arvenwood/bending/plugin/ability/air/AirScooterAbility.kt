@@ -7,12 +7,13 @@ import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
+import arvenwood.bending.plugin.Constants
+import arvenwood.bending.plugin.ability.AbilityTypes
 import arvenwood.bending.plugin.util.EpochTime
 import arvenwood.bending.plugin.util.forInclusive
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.effect.particle.ParticleEffect
-import org.spongepowered.api.effect.potion.PotionEffectTypes
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.util.Direction.UP
@@ -31,42 +32,26 @@ data class AirScooterAbility(
     val radius: Double,
     val speed: Double
 ) : Ability<AirScooterAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        duration = node.getNode("duration").long,
+        interval = node.getNode("interval").long,
+        maxGroundHeight = node.getNode("maxGroundHeight").double,
+        radius = node.getNode("radius").double,
+        speed = node.getNode("speed").double
+    )
 
-    override val type: AbilityType<AirScooterAbility> = AirScooterAbility
-
-    companion object : AbstractAbilityType<AirScooterAbility>(
-        element = Elements.Air,
-        executionTypes = enumSetOf(LEFT_CLICK),
-        id = "bending:air_scooter",
-        name = "AirScooter"
-    ) {
-        override fun load(node: ConfigurationNode): AirScooterAbility = AirScooterAbility(
-            cooldown = node.getNode("cooldown").long,
-            duration = node.getNode("duration").long,
-            interval = node.getNode("interval").long,
-            maxGroundHeight = node.getNode("maxGroundHeight").double,
-            radius = node.getNode("radius").double,
-            speed = node.getNode("speed").double
-        )
-
-        private const val TWO_PI: Double = Math.PI * 2
-        private const val TWO_FIFTHS_PI: Double = Math.PI * 2 / 5
-        private const val TENTH_PI: Double = Math.PI / 10
-        private const val PARTICLE_RADIUS: Double = 0.6
-    }
+    override val type: AbilityType<AirScooterAbility> = AbilityTypes.AIR_SCOOTER
 
     private val minVelocitySquared: Double = (this.speed * 0.3) * (this.speed * 0.3)
 
     private val particleEffect: ParticleEffect
-        get() =
-            EffectService.get().createParticle(Elements.Air, 1, Vector3d.ZERO)
-
-    private val random: Random = java.util.Random().asKotlinRandom()
+        get() = EffectService.get().createParticle(Elements.AIR, 1, Vector3d.ZERO)
 
     override fun preempt(context: AbilityContext, executionType: AbilityExecutionType) {
         val player: Player = context.require(StandardContext.player)
         // Cancel all other air scooters.
-        BenderService.get()[player.uniqueId].cancel(AirScooterAbility)
+        BenderService.get()[player.uniqueId].cancel(this.type)
     }
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
@@ -122,7 +107,7 @@ data class AirScooterAbility(
             player.isSprinting = false
             player.velocity = velocity
 
-            if (this.random.nextInt(4) == 0) {
+            if (Constants.RANDOM.nextInt(4) == 0) {
                 // Play the sounds every now and then.
                 location.extent.playSound(SoundTypes.ENTITY_CREEPER_HURT, location.position, 0.5, 1.0)
             }
@@ -167,5 +152,12 @@ data class AirScooterAbility(
         }
 
         return newPhi
+    }
+
+    companion object {
+        private const val TWO_PI: Double = Math.PI * 2
+        private const val TWO_FIFTHS_PI: Double = Math.PI * 2 / 5
+        private const val TENTH_PI: Double = Math.PI / 10
+        private const val PARTICLE_RADIUS: Double = 0.6
     }
 }

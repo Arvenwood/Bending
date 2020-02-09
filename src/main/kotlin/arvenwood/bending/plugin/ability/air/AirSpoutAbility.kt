@@ -7,6 +7,8 @@ import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.util.*
+import arvenwood.bending.plugin.Constants
+import arvenwood.bending.plugin.ability.AbilityTypes
 import com.flowpowered.math.vector.Vector3d
 import kotlinx.coroutines.Job
 import ninja.leaping.configurate.ConfigurationNode
@@ -27,24 +29,14 @@ data class AirSpoutAbility(
     val interval: Long,
     val height: Double
 ) : Ability<AirSpoutAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        duration = node.getNode("duration").long,
+        interval = node.getNode("interval").long,
+        height = node.getNode("height").double
+    )
 
-    override val type: AbilityType<AirSpoutAbility> = AirSpoutAbility
-
-    companion object : AbstractAbilityType<AirSpoutAbility>(
-        element = Elements.Air,
-        executionTypes = enumSetOf(LEFT_CLICK),
-        id = "bending:air_spout",
-        name = "AirSpout"
-    ) {
-        override fun load(node: ConfigurationNode): AirSpoutAbility = AirSpoutAbility(
-            cooldown = node.getNode("cooldown").long,
-            duration = node.getNode("duration").long,
-            interval = node.getNode("interval").long,
-            height = node.getNode("height").double
-        )
-    }
-
-    private val random: Random = java.util.Random().asKotlinRandom()
+    override val type: AbilityType<AirSpoutAbility> = AbilityTypes.AIR_SPOUT
 
     private val particleEffect: ParticleEffect =
         ParticleEffect.builder()
@@ -60,7 +52,7 @@ data class AirSpoutAbility(
         context[angle] = 0
 
         val startTime: Long = System.currentTimeMillis()
-        val defer: Job = BenderService.get()[player.uniqueId].deferExecution(AirSpoutAbility, LEFT_CLICK)
+        val defer: Job = BenderService.get()[player.uniqueId].deferExecution(this.type, LEFT_CLICK)
         abilityLoopUnsafe {
             if (player.isRemoved) {
                 return Success
@@ -80,7 +72,7 @@ data class AirSpoutAbility(
             player.offer(Keys.FALL_DISTANCE, 0F)
             player.isSprinting = false
 
-            if (this.random.nextInt(4) == 0) {
+            if (Constants.RANDOM.nextInt(4) == 0) {
                 // Play the sounds every now and then.
                 player.world.playSound(SoundTypes.ENTITY_CREEPER_HURT, player.position, 0.5, 1.0)
             }

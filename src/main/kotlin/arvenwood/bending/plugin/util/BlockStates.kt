@@ -1,4 +1,4 @@
-package arvenwood.bending.api.util
+package arvenwood.bending.plugin.util
 
 import org.spongepowered.api.block.BlockState
 import org.spongepowered.api.block.BlockTypes

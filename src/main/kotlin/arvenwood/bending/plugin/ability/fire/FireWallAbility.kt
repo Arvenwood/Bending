@@ -10,6 +10,8 @@ import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
+import arvenwood.bending.plugin.Constants
+import arvenwood.bending.plugin.ability.AbilityTypes
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
@@ -36,28 +38,18 @@ data class FireWallAbility(
     val width: Int,
     val height: Int
 ) : Ability<FireWallAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        duration = node.getNode("duration").long,
+        displayInterval = node.getNode("displayInterval").long,
+        damage = node.getNode("damage").double,
+        damageInterval = node.getNode("damageInterval").long,
+        fireTicks = node.getNode("fireTicks").int,
+        width = node.getNode("width").int,
+        height = node.getNode("height").int
+    )
 
-    override val type: AbilityType<FireWallAbility> = FireWallAbility
-
-    companion object : AbstractAbilityType<FireWallAbility>(
-        element = Elements.Fire,
-        executionTypes = enumSetOf(LEFT_CLICK),
-        id = "bending:fire_wall",
-        name = "FireWall"
-    ) {
-        override fun load(node: ConfigurationNode): FireWallAbility = FireWallAbility(
-            cooldown = node.getNode("cooldown").long,
-            duration = node.getNode("duration").long,
-            displayInterval = node.getNode("displayInterval").long,
-            damage = node.getNode("damage").double,
-            damageInterval = node.getNode("damageInterval").long,
-            fireTicks = node.getNode("fireTicks").int,
-            width = node.getNode("width").int,
-            height = node.getNode("height").int
-        )
-    }
-
-    private val random: Random = java.util.Random().asKotlinRandom()
+    override val type: AbilityType<FireWallAbility> = AbilityTypes.FIRE_WALL
 
     override fun prepare(player: Player, context: AbilityContext) {
         context[origin] = player.location.add(player.headDirection.mul(2.0))
@@ -128,7 +120,7 @@ data class FireWallAbility(
             location.spawnParticles(flame)
             location.spawnParticles(smoke)
 
-            if (this.random.nextInt(7) == 0) {
+            if (Constants.RANDOM.nextInt(7) == 0) {
                 // Play fire bending sound, every now and then.
                 location.extent.playSound(SoundTypes.BLOCK_FIRE_AMBIENT, location.position, 0.5, 1.0)
             }

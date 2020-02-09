@@ -7,6 +7,7 @@ import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
+import arvenwood.bending.plugin.ability.AbilityTypes
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.block.BlockTypes
@@ -20,7 +21,7 @@ import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 import org.spongepowered.api.world.explosion.Explosion
 
-data class CombustionAbility(
+data class FireCombustionAbility(
     override val cooldown: Long,
     val canBreakBlocks: Boolean,
     val damage: Double,
@@ -28,26 +29,18 @@ data class CombustionAbility(
     val radius: Double,
     val range: Double,
     val speed: Double
-) : Ability<CombustionAbility> {
+) : Ability<FireCombustionAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        canBreakBlocks = node.getNode("canBreakBlocks").boolean,
+        damage = node.getNode("damage").double,
+        power = node.getNode("power").float,
+        radius = node.getNode("radius").double,
+        range = node.getNode("range").double,
+        speed = node.getNode("speed").double
+    )
 
-    override val type: AbilityType<CombustionAbility> get() = CombustionAbility
-
-    companion object : AbstractAbilityType<CombustionAbility>(
-        element = Elements.Fire,
-        executionTypes = enumSetOf(SNEAK),
-        id = "bending:combustion",
-        name = "Combustion"
-    ) {
-        override fun load(node: ConfigurationNode): CombustionAbility = CombustionAbility(
-            cooldown = node.getNode("cooldown").long,
-            canBreakBlocks = node.getNode("canBreakBlocks").boolean,
-            damage = node.getNode("damage").double,
-            power = node.getNode("power").float,
-            radius = node.getNode("radius").double,
-            range = node.getNode("range").double,
-            speed = node.getNode("speed").double
-        )
-    }
+    override val type: AbilityType<FireCombustionAbility> = AbilityTypes.FIRE_COMBUSTION
 
     private val speedFactor: Double = this.speed * (50 / 1000.0)
     private val rangeSquared: Double = this.range * this.range

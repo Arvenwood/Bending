@@ -9,11 +9,10 @@ import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.protection.BuildProtectionService
 import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.getTargetLocation
-import com.google.common.base.Predicates
+import arvenwood.bending.plugin.ability.AbilityTypes
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.block.BlockType
 import org.spongepowered.api.block.BlockTypes
-import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
@@ -29,19 +28,19 @@ data class EarthBlastAbility(
     val speed: Double,
     val canHitSelf: Boolean
 ) : Ability<EarthBlastAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        collisionRadius = node.getNode("collisionRadius").double,
+        damage = node.getNode("damage").double,
+        deflectRange = node.getNode("deflectRange").double,
+        pushFactor = node.getNode("pushFactor").double,
+        range = node.getNode("range").double,
+        selectRange = node.getNode("selectRange").double,
+        speed = node.getNode("speed").double,
+        canHitSelf = node.getNode("canHitSelf").boolean
+    )
 
-    override val type: AbilityType<EarthBlastAbility> = EarthBlastAbility
-
-    companion object : AbstractAbilityType<EarthBlastAbility>(
-        element = Elements.Earth,
-        executionTypes = enumSetOf(LEFT_CLICK, SNEAK),
-        id = "bending:earth_blast",
-        name = "EarthBlast"
-    ) {
-        override fun load(node: ConfigurationNode): EarthBlastAbility {
-            TODO("not implemented")
-        }
-    }
+    override val type: AbilityType<EarthBlastAbility> = AbilityTypes.EARTH_BLAST
 
     private val interval: Long = (1000.0 / this.speed).toLong()
 
@@ -64,7 +63,7 @@ data class EarthBlastAbility(
             else -> BlockTypes.STONE
         }
 
-        bender.awaitExecution(EarthBlastAbility, LEFT_CLICK)
+        bender.awaitExecution(this.type, LEFT_CLICK)
 
         var isAtDestination = false
         var isProgressing = false

@@ -1,14 +1,12 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.*
-import arvenwood.bending.api.ability.StandardContext.player
-import arvenwood.bending.api.element.Elements
-import arvenwood.bending.api.util.enumSetOf
 import arvenwood.bending.api.util.headDirection
 import arvenwood.bending.api.util.isWater
 import arvenwood.bending.api.util.spawnParticles
+import arvenwood.bending.plugin.Constants
+import arvenwood.bending.plugin.ability.AbilityTypes
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
@@ -16,8 +14,6 @@ import org.spongepowered.api.effect.particle.ParticleEffect
 import org.spongepowered.api.effect.particle.ParticleTypes
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.living.player.Player
-import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 data class FireJetAbility(
     override val cooldown: Long,
@@ -25,27 +21,28 @@ data class FireJetAbility(
     val speed: Double,
     val showGliding: Boolean
 ) : Ability<FireJetAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        duration = node.getNode("duration").long,
+        speed = node.getNode("speed").double,
+        showGliding = node.getNode("showGliding").boolean
+    )
 
-    override val type: AbilityType<FireJetAbility> = FireJetAbility
+    override val type: AbilityType<FireJetAbility> = AbilityTypes.FIRE_JET
 
-    companion object : AbstractAbilityType<FireJetAbility>(
-        element = Elements.Fire,
-        executionTypes = enumSetOf(LEFT_CLICK),
-        id = "bending:fire_jet",
-        name = "FireJet"
-    ) {
-        override fun load(node: ConfigurationNode): FireJetAbility = FireJetAbility(
-            cooldown = node.getNode("cooldown").long,
-            duration = node.getNode("duration").long,
-            speed = node.getNode("speed").double,
-            showGliding = node.getNode("showGliding").boolean
-        )
-    }
-
-    private val random: Random = java.util.Random().asKotlinRandom()
+    private val particleFlame = ParticleEffect.builder()
+        .type(ParticleTypes.FLAME)
+        .quantity(20)
+        .offset(Vector3d(0.6, 0.6, 0.6))
+        .build()
+    private val particleSmoke = ParticleEffect.builder()
+        .type(ParticleTypes.SMOKE)
+        .quantity(10)
+        .offset(Vector3d(0.6, 0.6, 0.6))
+        .build()
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
-        val player: Player = context[player] ?: return ErrorNoTarget
+        val player: Player = context.player
 
         val startTime: Long = System.currentTimeMillis()
         abilityLoopUnsafe {
@@ -62,23 +59,13 @@ data class FireJetAbility(
                 return Success
             }
 
-            if (this.random.nextInt(2) == 0) {
+            if (Constants.RANDOM.nextInt(2) == 0) {
                 // Play fire bending sound, every now and then.
                 player.world.playSound(SoundTypes.BLOCK_FIRE_AMBIENT, player.position, 0.5, 1.0)
             }
 
-            val flame = ParticleEffect.builder()
-                .type(ParticleTypes.FLAME)
-                .quantity(20)
-                .offset(Vector3d(0.6, 0.6, 0.6))
-                .build()
-            val smoke = ParticleEffect.builder()
-                .type(ParticleTypes.SMOKE)
-                .quantity(10)
-                .offset(Vector3d(0.6, 0.6, 0.6))
-                .build()
-            player.location.spawnParticles(flame)
-            player.location.spawnParticles(smoke)
+            player.location.spawnParticles(this.particleFlame)
+            player.location.spawnParticles(this.particleSmoke)
 
             // Launch them a bit.
             val timeFactor: Double = 1 - (System.currentTimeMillis() - startTime) / (2.0 * this.duration)

@@ -7,6 +7,8 @@ import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
+import arvenwood.bending.plugin.Constants
+import arvenwood.bending.plugin.ability.AbilityTypes
 import arvenwood.bending.plugin.action.AirProjectile
 import arvenwood.bending.plugin.action.advanceAll
 import arvenwood.bending.plugin.util.forInclusive
@@ -35,37 +37,27 @@ data class AirSwipeAbility(
     val speed: Double,
     val numParticles: Int
 ) : Ability<AirSwipeAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        chargeTime = node.getNode("chargeTime").long,
+        maxChargeFactor = node.getNode("maxChargeFactor").double,
+        arcDegrees = node.getNode("arcDegrees").double,
+        arcIncrementDegrees = node.getNode("arcIncrementDegrees").double,
+        damage = node.getNode("damage").double,
+        pushFactor = node.getNode("pushFactor").double,
+        radius = node.getNode("radius").double,
+        range = node.getNode("range").double,
+        speed = node.getNode("speed").double,
+        numParticles = node.getNode("numParticles").int
+    )
 
-    override val type: AbilityType<AirSwipeAbility> = AirSwipeAbility
-
-    companion object : AbstractAbilityType<AirSwipeAbility>(
-        element = Elements.Air,
-        executionTypes = setOf(LEFT_CLICK, SNEAK),
-        id = "bending:air_swipe",
-        name = "AirSwipe"
-    ) {
-        override fun load(node: ConfigurationNode): AirSwipeAbility = AirSwipeAbility(
-            cooldown = node.getNode("cooldown").long,
-            chargeTime = node.getNode("chargeTime").long,
-            maxChargeFactor = node.getNode("maxChargeFactor").double,
-            arcDegrees = node.getNode("arcDegrees").double,
-            arcIncrementDegrees = node.getNode("arcIncrementDegrees").double,
-            damage = node.getNode("damage").double,
-            pushFactor = node.getNode("pushFactor").double,
-            radius = node.getNode("radius").double,
-            range = node.getNode("range").double,
-            speed = node.getNode("speed").double,
-            numParticles = node.getNode("numParticles").int
-        )
-    }
+    override val type: AbilityType<AirSwipeAbility> = AbilityTypes.AIR_SWIPE
 
     private val arcRadians: Double = Math.toRadians(this.arcDegrees)
     private val arcDegreesRadians: Double = Math.toRadians(this.arcIncrementDegrees)
 
     private val particleEffect: ParticleEffect =
-        EffectService.get().createParticle(Elements.Air, this.numParticles, AirConstants.VECTOR_0_2)
-
-    private val random: Random = java.util.Random().asKotlinRandom()
+        EffectService.get().createParticle(Elements.AIR, this.numParticles, AirConstants.VECTOR_0_2)
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context.require(StandardContext.player)
@@ -113,7 +105,7 @@ data class AirSwipeAbility(
             val anySucceeded: Boolean = projectiles.advanceAll { projectile: AirProjectile, _: Location<World> ->
                 projectile.affectBlocks(source, affectedLocations)
                 projectile.affectEntities(source, affectedEntities, canPushSelf = false)
-                projectile.visualize(this.particleEffect, playSounds = this.random.nextInt(4) == 0)
+                projectile.visualize(this.particleEffect, playSounds = Constants.RANDOM.nextInt(4) == 0)
             }
 
             if (!anySucceeded) {

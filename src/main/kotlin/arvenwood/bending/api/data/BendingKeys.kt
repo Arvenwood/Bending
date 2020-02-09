@@ -12,5 +12,5 @@ object BendingKeys {
         .id("bending:invincible")
         .name("Invincible")
         .query(DataQuery.of("Invincible"))
-        .build();
+        .build()
 }

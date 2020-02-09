@@ -1,4 +1,4 @@
-package arvenwood.bending.api.util.async
+package arvenwood.bending.plugin.util.async
 
 import kotlinx.coroutines.*
 import org.spongepowered.api.Sponge

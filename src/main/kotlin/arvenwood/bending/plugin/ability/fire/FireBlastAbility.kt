@@ -1,16 +1,16 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.currentLocation
 import arvenwood.bending.api.ability.StandardContext.direction
 import arvenwood.bending.api.ability.StandardContext.origin
 import arvenwood.bending.api.ability.StandardContext.player
-import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
+import arvenwood.bending.plugin.Constants
+import arvenwood.bending.plugin.ability.AbilityTypes
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
@@ -23,8 +23,6 @@ import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.cause.entity.damage.source.DamageSources
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
-import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 data class FireBlastAbility(
     override val cooldown: Long,
@@ -38,35 +36,23 @@ data class FireBlastAbility(
     val flameRadius: Double,
     val smokeRadius: Double
 ) : Ability<FireBlastAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        damage = node.getNode("damage").double,
+        fireTicks = node.getNode("fireTicks").int,
+        knockback = node.getNode("knockback").double,
+        radius = node.getNode("radius").double,
+        range = node.getNode("range").double,
+        speed = node.getNode("speed").double,
+        showParticles = node.getNode("showParticles").boolean,
+        flameRadius = node.getNode("flameRadius").double,
+        smokeRadius = node.getNode("smokeRadius").double
+    )
 
-    override val type: AbilityType<FireBlastAbility> = FireBlastAbility
-
-    companion object : AbstractAbilityType<FireBlastAbility>(
-        element = Elements.Fire,
-        executionTypes = enumSetOf(LEFT_CLICK),
-        id = "bending:fire_blast",
-        name = "FireBlast"
-    ) {
-        override fun load(node: ConfigurationNode): FireBlastAbility = FireBlastAbility(
-            cooldown = node.getNode("cooldown").long,
-            damage = node.getNode("damage").double,
-            fireTicks = node.getNode("fireTicks").int,
-            knockback = node.getNode("knockback").double,
-            radius = node.getNode("radius").double,
-            range = node.getNode("range").double,
-            speed = node.getNode("speed").double,
-            showParticles = node.getNode("showParticles").boolean,
-            flameRadius = node.getNode("flameRadius").double,
-            smokeRadius = node.getNode("smokeRadius").double
-        )
-
-        private const val MAX_TICKS: Int = 10000
-    }
+    override val type: AbilityType<FireBlastAbility> = AbilityTypes.FIRE_BLAST
 
     private val speedFactor: Double = this.speed * (50 / 1000.0)
     private val rangeSquared: Double = this.range * this.range
-
-    private val random: Random = java.util.Random().asKotlinRandom()
 
     private val particleFlame: ParticleEffect = ParticleEffect.builder()
         .type(ParticleTypes.FLAME)
@@ -77,7 +63,7 @@ data class FireBlastAbility(
     private val particleSmoke: ParticleEffect = ParticleEffect.builder()
         .type(ParticleTypes.SMOKE)
         .quantity(3)
-        .offset(Vector3d(this.flameRadius, this.flameRadius, this.flameRadius))
+        .offset(Vector3d(this.smokeRadius, this.smokeRadius, this.smokeRadius))
         .build()
 
     override fun prepare(player: Player, context: AbilityContext) {
@@ -137,7 +123,7 @@ data class FireBlastAbility(
             location.spawnParticles(particleFlame)
             location.spawnParticles(particleSmoke)
         }
-        if (this.random.nextInt(4) == 0) {
+        if (Constants.RANDOM.nextInt(4) == 0) {
             // Play fire bending sound, every now and then.
             location.extent.playSound(SoundTypes.BLOCK_FIRE_AMBIENT, location.position, 0.5, 1.0)
         }

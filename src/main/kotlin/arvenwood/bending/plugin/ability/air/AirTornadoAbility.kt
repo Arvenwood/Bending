@@ -1,7 +1,6 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.ability.StandardContext.player
@@ -9,6 +8,8 @@ import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.service.ProtectionService
 import arvenwood.bending.api.util.*
+import arvenwood.bending.plugin.Constants
+import arvenwood.bending.plugin.ability.AbilityTypes
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.block.BlockTypes
@@ -21,8 +22,6 @@ import org.spongepowered.api.world.World
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
-import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 /**
  * TODO make it work
@@ -37,46 +36,20 @@ data class AirTornadoAbility(
     val speed: Double,
     val particles: Int
 ) : Ability<AirTornadoAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        duration = node.getNode("duration").long,
+        height = node.getNode("height").double,
+        pushFactor = node.getNode("pushFactor").double,
+        radius = node.getNode("radius").double,
+        range = node.getNode("range").double,
+        speed = node.getNode("speed").double,
+        particles = node.getNode("particles").int
+    )
 
-    override val type: AbilityType<AirTornadoAbility> = AirTornadoAbility
-
-    companion object : AbstractAbilityType<AirTornadoAbility>(
-        element = Elements.Air,
-        executionTypes = enumSetOf(SNEAK),
-        id = "bending:air_tornado",
-        name = "AirTornado"
-    ) {
-        override fun load(node: ConfigurationNode): AirTornadoAbility = AirTornadoAbility(
-            cooldown = node.getNode("cooldown").long,
-            duration = node.getNode("duration").long,
-            height = node.getNode("height").double,
-            pushFactor = node.getNode("pushFactor").double,
-            radius = node.getNode("radius").double,
-            range = node.getNode("range").double,
-            speed = node.getNode("speed").double,
-            particles = node.getNode("particles").int
-        )
-
-        private fun createAngleDegMap(height: Double, numStreams: Int): MutableMap<Int, Int> {
-            val angles = HashMap<Int, Int>()
-            var angle = 0
-            var i = 0
-            val di: Int = (height / numStreams).toInt()
-            while (i <= height) {
-                angles[i] = angle
-                angle += 90
-                if (angle == 360) angle = 0
-
-                i += di
-            }
-            return angles
-        }
-    }
+    override val type: AbilityType<AirTornadoAbility> = AbilityTypes.AIR_TORNADO
 
     private val numStreams: Int = (this.height * 0.3).toInt()
-
-    private val random: Random = java.util.Random().asKotlinRandom()
-
     private val angleDegMap: Map<Int, Int> = createAngleDegMap(this.height, this.numStreams)
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
@@ -160,8 +133,8 @@ data class AirTornadoAbility(
                 val effect: Location<World> = Location(origin.extent, x, y, z)
 
                 if (!ProtectionService.get().isProtected(player, effect)) {
-                    EffectService.get().createRandomParticle(Elements.Air, this.particles)
-                    if (this.random.nextInt(20) == 0) {
+                    EffectService.get().createRandomParticle(Elements.AIR, this.particles)
+                    if (Constants.RANDOM.nextInt(20) == 0) {
                         // Play the sounds every now and then.
                         effect.extent.playSound(SoundTypes.ENTITY_CREEPER_HURT, effect.position, 0.5, 1.0)
                     }
@@ -170,5 +143,20 @@ data class AirTornadoAbility(
         }
 
         currentHeight = if (currentHeight > height) height else currentHeight + 1
+    }
+
+    private fun createAngleDegMap(height: Double, numStreams: Int): MutableMap<Int, Int> {
+        val angles = HashMap<Int, Int>()
+        var angle = 0
+        var i = 0
+        val di: Int = (height / numStreams).toInt()
+        while (i <= height) {
+            angles[i] = angle
+            angle += 90
+            if (angle == 360) angle = 0
+
+            i += di
+        }
+        return angles
     }
 }

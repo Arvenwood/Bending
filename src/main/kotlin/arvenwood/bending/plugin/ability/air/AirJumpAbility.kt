@@ -1,12 +1,15 @@
 package arvenwood.bending.plugin.ability.air
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityExecutionType.SNEAK
 import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
 import arvenwood.bending.api.ability.AbilityResult.Success
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.EffectService
-import arvenwood.bending.api.util.*
+import arvenwood.bending.api.util.headDirection
+import arvenwood.bending.api.util.rotateAroundAxisX
+import arvenwood.bending.api.util.rotateAroundAxisY
+import arvenwood.bending.api.util.spawnParticles
+import arvenwood.bending.plugin.ability.AbilityTypes
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.effect.particle.ParticleEffect
@@ -21,20 +24,12 @@ data class AirJumpAbility(
     val multiplier: Double,
     val particleRadius: Double = 1.0
 ) : Ability<AirJumpAbility> {
+    constructor(node: ConfigurationNode) : this(
+        cooldown = node.getNode("cooldown").long,
+        multiplier = node.getNode("multiplier").double
+    )
 
-    override val type: AbilityType<AirJumpAbility> = AirJumpAbility
-
-    companion object : AbstractAbilityType<AirJumpAbility>(
-        element = Elements.Air,
-        executionTypes = enumSetOf(SNEAK),
-        id = "bending:air_jump",
-        name = "AirJump"
-    ) {
-        override fun load(node: ConfigurationNode): AirJumpAbility = AirJumpAbility(
-            cooldown = node.getNode("cooldown").long,
-            multiplier = node.getNode("multiplier").double
-        )
-    }
+    override val type: AbilityType<AirJumpAbility> = AbilityTypes.AIR_JUMP
 
     private val particleEffect: ParticleEffect = ParticleEffect.builder()
         .type(ParticleTypes.EXPLOSION)
@@ -64,7 +59,7 @@ data class AirJumpAbility(
                 .rotateAroundAxisY(Math.toRadians(-direction.y))
 
             player.location.add(vec)
-                .spawnParticles(EffectService.get().createRandomParticle(Elements.Air, 4))
+                .spawnParticles(EffectService.get().createRandomParticle(Elements.AIR, 4))
 
             step++
         }

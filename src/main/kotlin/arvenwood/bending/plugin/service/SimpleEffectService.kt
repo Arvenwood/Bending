@@ -12,8 +12,8 @@ import java.util.*
 
 class SimpleEffectService : EffectService {
 
-    private val elementParticles: IdentityHashMap<Elements.Air, ParticleType> = identityHashMapOf(
-        Elements.Air to ParticleTypes.CLOUD
+    private val elementParticles: IdentityHashMap<Element, ParticleType> = identityHashMapOf(
+        Elements.AIR to ParticleTypes.CLOUD
     )
 
     override fun getParticleType(element: Element): ParticleType =
