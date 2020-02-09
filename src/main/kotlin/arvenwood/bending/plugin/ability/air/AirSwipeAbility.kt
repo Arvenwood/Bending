@@ -8,12 +8,14 @@ import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
-import arvenwood.bending.plugin.action.AirProjectile
-import arvenwood.bending.plugin.action.advanceAll
+import arvenwood.bending.plugin.projectile.AirRaycast
+import arvenwood.bending.plugin.projectile.Raycast
+import arvenwood.bending.plugin.projectile.advanceAll
 import arvenwood.bending.plugin.util.forInclusive
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.effect.particle.ParticleEffect
+import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.world.Location
@@ -93,15 +95,23 @@ data class AirSwipeAbility(
         source: Player, origin: Location<World>,
         damage: Double = this.damage, pushFactor: Double = this.pushFactor
     ): AbilityResult {
-        val projectiles: List<AirProjectile> = createProjectiles(origin, source.headDirection.normalize(), damage, pushFactor)
+        val raycasts: List<Raycast> = createRaycasts(origin, source.headDirection.normalize())
 
-        val affectedLocations = ArrayList<Location<World>>()
         val affectedEntities = ArrayList<Entity>()
         abilityLoopUnsafe {
-            val anySucceeded: Boolean = projectiles.advanceAll { projectile: AirProjectile, _: Location<World> ->
-                projectile.affectBlocks(source, affectedLocations)
-                projectile.affectEntities(source, affectedEntities, canPushSelf = false)
-                projectile.visualize(this.particleEffect, playSounds = Constants.RANDOM.nextInt(4) == 0)
+            val anySucceeded: Boolean = raycasts.advanceAll {
+                affectEntities(source, affectedEntities, radius) { test: Entity ->
+                    with(AirRaycast) {
+                        pushEntity(source, test, false, pushFactor, pushFactor)
+                    }
+
+                    damageEntity(test, damage)
+                }
+                playParticles(particleEffect)
+
+                if (Constants.RANDOM.nextInt(4) == 0) {
+                    playSounds(SoundTypes.ENTITY_CREEPER_HURT, 0.5, 1.0)
+                }
             }
 
             if (!anySucceeded) {
@@ -110,11 +120,10 @@ data class AirSwipeAbility(
         }
     }
 
-    private fun createProjectiles(
-        origin: Location<World>, direction: Vector3d,
-        damage: Double = this.damage, pushFactor: Double = this.pushFactor
-    ): List<AirProjectile> {
-        val result = ArrayList<AirProjectile>()
+    private fun createRaycasts(
+        origin: Location<World>, direction: Vector3d
+    ): List<Raycast> {
+        val result = ArrayList<Raycast>()
 
         forInclusive(from = -this.arcRadians, to = this.arcRadians, step = this.arcDegreesRadians) { angle: Double ->
             val sinAngle: Double = sin(angle)
@@ -123,21 +132,16 @@ data class AirSwipeAbility(
             val vx: Double = direction.x * cosAngle - direction.z * sinAngle
             val vz: Double = direction.x * sinAngle + direction.z * cosAngle
 
-            result += AirProjectile(
+            result += Raycast(
                 origin = origin,
                 direction = direction.withXZ(vx, vz),
-                damage = damage,
-                pushFactorSelf = pushFactor,
-                pushFactorOther = pushFactor,
-                radius = this.radius,
                 range = this.range,
                 speed = this.speed,
-                checkDiagonals = true,
-                canExtinguishFlames = false,
-                canCoolLava = false
+                checkDiagonals = true
             )
         }
 
         return result
     }
+
 }

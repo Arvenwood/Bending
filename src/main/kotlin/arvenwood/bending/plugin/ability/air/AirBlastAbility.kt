@@ -10,17 +10,18 @@ import arvenwood.bending.api.ability.StandardContext.affectedLocations
 import arvenwood.bending.api.ability.StandardContext.currentLocation
 import arvenwood.bending.api.ability.StandardContext.direction
 import arvenwood.bending.api.ability.StandardContext.origin
-import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
-import arvenwood.bending.plugin.action.AirProjectile
+import arvenwood.bending.plugin.projectile.AirRaycast
+import arvenwood.bending.plugin.projectile.Raycast
 import com.flowpowered.math.vector.Vector3d
 import kotlinx.coroutines.Job
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.effect.particle.ParticleEffect
+import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.world.Location
@@ -121,37 +122,44 @@ data class AirBlastAbility(
         val origin: Location<World> = context.require(origin)
         val direction: Vector3d = context.require(direction)
 
-        val projectile = AirProjectile(
+        val raycast = Raycast(
             origin = origin,
             direction = direction,
-            damage = this.damage,
-            pushFactorSelf = this.pushFactorSelf,
-            pushFactorOther = this.pushFactorOther,
-            radius = this.radius,
             range = this.range,
             speed = this.speed,
-            checkDiagonals = true,
-            canExtinguishFlames = true,
-            canCoolLava = this.canCoolLava
+            checkDiagonals = true
         )
 
-        abilityLoop {
+        abilityLoopUnsafe {
             if (player.isRemoved) {
                 // Stop if this Player object is stale.
                 return ErrorDied
             }
 
-            val result: AbilityResult = projectile.advance {
-                projectile.affectBlocks(player, affectedLocations)
-                projectile.affectEntities(player, affectedEntities, canPushSelf)
-                projectile.visualize(this.particleEffect, Constants.RANDOM.nextInt(4) == 0)
+            val result: AbilityResult = raycast.advance {
+                affectLocations(player, affectedLocations, radius) { test: Location<World> ->
+                    AirRaycast.extinguishFlames(test)
+                            || (canCoolLava && AirRaycast.coolLava(test))
+                            || AirRaycast.toggleDoor(test)
+                            || AirRaycast.toggleLever(test)
+                }
+                affectEntities(player, affectedEntities, radius) { test: Entity ->
+                    with (AirRaycast) {
+                        pushEntity(player, test, canPushSelf, pushFactorSelf, pushFactorOther)
+                    }
+
+                    damageEntity(test, damage)
+                }
+                playParticles(particleEffect)
+
+                if (Constants.RANDOM.nextInt(4) == 0) {
+                    playSounds(SoundTypes.ENTITY_CREEPER_HURT, 0.5, 1.0)
+                }
             }
 
             if (result != Success) {
                 return result
             }
         }
-
-        return Success
     }
 }

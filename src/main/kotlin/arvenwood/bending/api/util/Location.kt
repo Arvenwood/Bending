@@ -1,6 +1,7 @@
 package arvenwood.bending.api.util
 
 import com.flowpowered.math.vector.Vector3d
+import com.flowpowered.math.vector.Vector3i
 import org.spongepowered.api.effect.particle.ParticleEffect
 import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.item.inventory.ItemStack
@@ -84,3 +85,7 @@ fun Location<World>.digBlockWith(itemStack: ItemStack, profile: GameProfile): Bo
 
 fun Location<World>.add(x: Int, y: Int, z: Int): Location<World> =
     this.add(x.toDouble(), y.toDouble(), z.toDouble())
+
+operator fun Location<World>.plus(v: Vector3d): Location<World> = this.add(v)
+
+operator fun Location<World>.plus(v: Vector3i): Location<World> = this.add(v)

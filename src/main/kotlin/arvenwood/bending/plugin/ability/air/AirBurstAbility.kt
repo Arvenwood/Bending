@@ -9,13 +9,15 @@ import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
-import arvenwood.bending.plugin.action.AirProjectile
-import arvenwood.bending.plugin.action.advanceAll
+import arvenwood.bending.plugin.projectile.AirRaycast
+import arvenwood.bending.plugin.projectile.Raycast
+import arvenwood.bending.plugin.projectile.advanceAll
 import arvenwood.bending.plugin.util.forExclusive
 import arvenwood.bending.plugin.util.forInclusive
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.effect.particle.ParticleEffect
+import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.world.Location
@@ -115,15 +117,29 @@ data class AirBurstAbility(
         thetaMin: Double, thetaMax: Double,
         targetDirection: Vector3d = Vector3d.ZERO, maxAngle: Double = 0.0
     ): AbilityResult {
-        val projectiles: List<AirProjectile> = createProjectiles(origin, thetaMin, thetaMax, targetDirection, maxAngle)
+        val raycasts: List<Raycast> = createRaycasts(origin, thetaMin, thetaMax, targetDirection, maxAngle)
 
         val affectedLocations = ArrayList<Location<World>>()
         val affectedEntities = ArrayList<Entity>()
         abilityLoopUnsafe {
-            val anySucceeded: Boolean = projectiles.advanceAll { projectile: AirProjectile, _: Location<World> ->
-                projectile.affectBlocks(source, affectedLocations)
-                projectile.affectEntities(source, affectedEntities, false)
-                projectile.visualize(this.particleEffect, Constants.RANDOM.nextInt(9) == 0)
+            val anySucceeded: Boolean = raycasts.advanceAll {
+                affectLocations(source, affectedLocations, blastRadius) { test: Location<World> ->
+                    AirRaycast.extinguishFlames(test)
+                            || AirRaycast.toggleDoor(test)
+                            || AirRaycast.toggleLever(test)
+                }
+                affectEntities(source, affectedEntities, blastRadius) { test: Entity ->
+                    with(AirRaycast) {
+                        pushEntity(source, test,  false, pushFactor, pushFactor)
+                    }
+
+                    damageEntity(test, damage)
+                }
+                playParticles(particleEffect)
+
+                if (Constants.RANDOM.nextInt(9) == 0) {
+                    playSounds(SoundTypes.ENTITY_CREEPER_HURT, 0.5, 1.0)
+                }
             }
 
             if (!anySucceeded) {
@@ -132,12 +148,12 @@ data class AirBurstAbility(
         }
     }
 
-    private fun createProjectiles(
+    private fun createRaycasts(
         origin: Location<World>,
         thetaMin: Double, thetaMax: Double,
         targetDirection: Vector3d = Vector3d.ZERO, maxAngle: Double = 0.0
-    ): List<AirProjectile> {
-        val result = ArrayList<AirProjectile>()
+    ): List<Raycast> {
+        val result = ArrayList<Raycast>()
 
         forInclusive(from = thetaMin, to = thetaMax, step = this.angleTheta) { theta: Double ->
             val sinTheta: Double = sin(Math.toRadians(theta))
@@ -158,18 +174,12 @@ data class AirBurstAbility(
                     return@forExclusive
                 }
 
-                result += AirProjectile(
+                result += Raycast(
                     origin = origin,
                     direction = direction,
-                    damage = this.damage,
-                    pushFactorSelf = this.pushFactor,
-                    pushFactorOther = this.pushFactor,
-                    radius = this.blastRadius,
                     range = this.range,
                     speed = this.speed,
-                    checkDiagonals = true,
-                    canExtinguishFlames = true,
-                    canCoolLava = false
+                    checkDiagonals = true
                 )
             }
         }
