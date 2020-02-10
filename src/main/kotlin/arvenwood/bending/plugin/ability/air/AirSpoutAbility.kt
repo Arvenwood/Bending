@@ -4,20 +4,16 @@ import arvenwood.bending.api.Bender
 import arvenwood.bending.api.ability.*
 import arvenwood.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
 import arvenwood.bending.api.ability.AbilityResult.*
-import arvenwood.bending.api.ability.StandardContext.player
 import arvenwood.bending.api.element.Elements
-import arvenwood.bending.api.service.BenderService
 import arvenwood.bending.api.service.EffectService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
 import arvenwood.bending.plugin.util.EpochTime
-import com.flowpowered.math.vector.Vector3d
 import kotlinx.coroutines.Job
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.effect.particle.ParticleEffect
-import org.spongepowered.api.effect.particle.ParticleTypes
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.world.Location
@@ -45,8 +41,8 @@ data class AirSpoutAbility(
         val player: Player = context.player
         val bender: Bender = context.bender
 
-        context[animationTime] = System.currentTimeMillis()
-        context[angle] = 0
+        var animationTime: EpochTime = EpochTime.now()
+        var angle = 0
 
         val startTime: EpochTime = EpochTime.now()
         val defer: Job = bender.deferExecution(LEFT_CLICK)
@@ -85,7 +81,23 @@ data class AirSpoutAbility(
                 player.isFlying = true
             }
 
-            this.rotateAirColumn(context, player.location, highest)
+            if (animationTime.elapsedNow() >= this.interval) {
+                animationTime = EpochTime.now()
+
+                val location: Location<World> = Location(highest.extent, player.location.x, highest.y, player.location.z)
+
+                var index: Int = angle
+                val dyParticle: Double = min(player.location.y - highest.y, this.height)
+                angle = if (angle >= 8) 0 else angle + 1
+
+                var i = 1
+                while (i <= dyParticle) {
+                    index = if (index >= 8) 0 else index + 1
+                    val effectLoc: Location<World> = location.add(0.0, i.toDouble(), 0.0)
+                    effectLoc.spawnParticles(this.particleEffect)
+                    i++
+                }
+            }
         }
     }
 
@@ -94,30 +106,4 @@ data class AirSpoutAbility(
         player.canFly = false
         player.isFlying = false
     }
-
-    private fun rotateAirColumn(context: AbilityContext, playerLocation: Location<World>, highest: Location<World>) {
-        var animationTime: Long by context.by(animationTime)
-        var angle: Int by context.by(angle)
-
-        if (EpochTime(animationTime).elapsedNow() >= this.interval) {
-            animationTime = System.currentTimeMillis()
-            val location: Location<World> = Location(highest.extent, playerLocation.x, highest.y, playerLocation.z)
-
-            var index: Int = angle
-            val dy: Double = min(playerLocation.y - highest.y, this.height)
-            angle = if (angle >= 8) 0 else angle + 1
-
-            var i = 1
-            while (i <= dy) {
-                index = if (index >= 8) 0 else index + 1
-                val effectLoc: Location<World> = location.add(0.0, i.toDouble(), 0.0)
-                effectLoc.spawnParticles(this.particleEffect)
-                i++
-            }
-        }
-    }
-
-    object animationTime : AbilityContext.Key<Long>("bending:animation_time", "Animation Time Context")
-
-    object angle : AbilityContext.Key<Int>("bending:angle", "Angle Context")
 }
