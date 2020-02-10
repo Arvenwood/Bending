@@ -52,7 +52,7 @@ data class FireShieldAbility(
         .offset(Vector3d.ZERO)
         .build()
 
-    private val offsets: Array<out List<Vector3d>> = this.calculateOffsets()
+    private val offsets: Array<List<Vector3d>> = this.calculateOffsets()
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context.require(player)
@@ -108,28 +108,27 @@ data class FireShieldAbility(
         }
     }
 
-    private fun calculateOffsets(): Array<out List<Vector3d>> {
-        val result: Array<MutableList<Vector3d>> = Array(3) { ArrayList<Vector3d>() }
-
-        for (i: Int in 0..2) {
-            val increment: Int = i * 20 + 20
+    private fun calculateOffsets(): Array<List<Vector3d>> =
+        Array(3) { index: Int ->
+            val offsets = ArrayList<Vector3d>()
+            val increment: Int = index * 20 + 20
 
             for (theta: Int in 0 until 180 step increment) {
+                val thetaRad: Double = Math.toRadians(theta.toDouble())
+                val sinTheta: Double = sin(thetaRad)
+                val cosTheta: Double = cos(thetaRad)
+
                 for (phi: Int in 0 until 360 step increment) {
-                    val rTheta: Double = Math.toRadians(theta.toDouble())
-                    val rPhi: Double = Math.toRadians(phi.toDouble())
+                    val phiRad: Double = Math.toRadians(phi.toDouble())
 
-                    val offset = Vector3d(
-                        this.radius / 1.5 * cos(rPhi) * sin(rTheta),
-                        this.radius / 1.5 * cos(rTheta),
-                        this.radius / 1.5 * sin(rPhi) * sin(rTheta)
+                    offsets += Vector3d(
+                        this.radius / 1.5 * cos(phiRad) * sinTheta,
+                        this.radius / 1.5 * cosTheta,
+                        this.radius / 1.5 * sin(phiRad) * sinTheta
                     )
-
-                    result[i].add(offset)
                 }
             }
-        }
 
-        return result
-    }
+            offsets
+        }
 }
