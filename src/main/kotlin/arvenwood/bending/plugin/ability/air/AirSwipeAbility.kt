@@ -12,6 +12,7 @@ import arvenwood.bending.plugin.ability.AbilityTypes
 import arvenwood.bending.plugin.projectile.AirRaycast
 import arvenwood.bending.plugin.raycast.Raycast
 import arvenwood.bending.plugin.raycast.advanceAll
+import arvenwood.bending.plugin.util.EpochTime
 import arvenwood.bending.plugin.util.forInclusive
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
@@ -54,7 +55,7 @@ data class AirSwipeAbility(
     override val type: AbilityType<AirSwipeAbility> = AbilityTypes.AIR_SWIPE
 
     private val arcRadians: Double = Math.toRadians(this.arcDegrees)
-    private val arcDegreesRadians: Double = Math.toRadians(this.arcIncrementDegrees)
+    private val arcIncrementRadians: Double = Math.toRadians(this.arcIncrementDegrees)
 
     private val particleEffect: ParticleEffect = EffectService.get().createParticle(Elements.AIR, this.numParticles, AirConstants.VECTOR_0_2)
 
@@ -67,10 +68,11 @@ data class AirSwipeAbility(
             }
             else -> {
                 var charged = false
-                val startTime: Long = System.currentTimeMillis()
+                val startTime: EpochTime = EpochTime.now()
                 abilityLoopUnsafe {
-                    val currentTime: Long = System.currentTimeMillis()
-                    if (startTime + this.chargeTime <= currentTime) {
+                    val currentTime: EpochTime = EpochTime.now()
+
+                    if (startTime.elapsed(currentTime) >= this.chargeTime) {
                         charged = true
                     }
 
@@ -78,7 +80,7 @@ data class AirSwipeAbility(
                         val factor: Double = if (charged) {
                             this.maxChargeFactor
                         } else {
-                            this.maxChargeFactor * (currentTime - startTime) / this.chargeTime
+                            this.maxChargeFactor * (startTime.elapsed(currentTime)) / this.chargeTime
                         }
 
                         return this.swipe(player, player.eyeLocation, this.damage * factor, this.pushFactor * factor)
@@ -130,7 +132,7 @@ data class AirSwipeAbility(
     ): List<Raycast> {
         val result = ArrayList<Raycast>()
 
-        forInclusive(from = -this.arcRadians, to = this.arcRadians, step = this.arcDegreesRadians) { angle: Double ->
+        forInclusive(from = -this.arcRadians, to = this.arcRadians, step = this.arcIncrementRadians) { angle: Double ->
             val sinAngle: Double = sin(angle)
             val cosAngle: Double = cos(angle)
 
