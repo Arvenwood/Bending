@@ -61,26 +61,25 @@ data class AirBurstAbility(
 
     private val maxConeRadians: Double = Math.toRadians(this.maxConeDegrees)
 
+    private val fallDirections: List<Vector3d> = this.calculateRaycastDirections(75.0, 105.0)
+    private val sphereDirections: List<Vector3d> = this.calculateRaycastDirections(0.0, 180.0)
+
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context.require(StandardContext.player)
 
         when (executionType) {
             FALL -> {
-                return if (context.require(StandardContext.fallDistance) >= this.fallThreshold)
-                    this.burst(
-                        source = player,
-                        origin = player.location,
-                        thetaMin = 75.0,
-                        thetaMax = 105.0
-                    )
-                else Success
+                if (context.require(StandardContext.fallDistance) >= this.fallThreshold) {
+                    return this.burst(source = player, origin = player.location, directions = this.fallDirections)
+                } else {
+                    return Success
+                }
             }
             LEFT_CLICK -> {
                 return this.burst(
                     source = player,
                     origin = player.location,
-                    thetaMin = 0.0,
-                    thetaMax = 180.0,
+                    directions = this.sphereDirections,
                     targetDirection = player.headDirection.normalize(),
                     maxAngle = this.maxConeRadians
                 )
@@ -95,14 +94,11 @@ data class AirBurstAbility(
             }
 
             if (!player.isSneaking) {
-                return if (charged)
-                    this.burst(
-                        source = player,
-                        origin = player.eyeLocation,
-                        thetaMin = 0.0,
-                        thetaMax = 180.0
-                    )
-                else Success
+                if (charged) {
+                    return this.burst(source = player, origin = player.eyeLocation, directions = this.sphereDirections)
+                } else {
+                    return Success
+                }
             }
 
             if (charged) {
@@ -114,11 +110,10 @@ data class AirBurstAbility(
     }
 
     private suspend fun burst(
-        source: Player, origin: Location<World>,
-        thetaMin: Double, thetaMax: Double,
+        source: Player, origin: Location<World>, directions: List<Vector3d>,
         targetDirection: Vector3d = Vector3d.ZERO, maxAngle: Double = 0.0
     ): AbilityResult {
-        val raycasts: List<Raycast> = createRaycasts(origin, thetaMin, thetaMax, targetDirection, maxAngle)
+        val raycasts: List<Raycast> = createRaycasts(origin, directions, targetDirection, maxAngle)
 
         val affectedLocations = HashSet<Location<World>>()
         val affectedEntities = HashSet<Entity>()
@@ -133,7 +128,7 @@ data class AirBurstAbility(
                 }
                 affectEntities(source, affectedEntities, blastRadius) { test: Entity ->
                     with(AirRaycast) {
-                        pushEntity(source, test,  false, pushFactor, pushFactor)
+                        pushEntity(source, test, false, pushFactor, pushFactor)
                     }
 
                     damageEntity(test, damage)
@@ -154,11 +149,26 @@ data class AirBurstAbility(
     }
 
     private fun createRaycasts(
-        origin: Location<World>,
-        thetaMin: Double, thetaMax: Double,
+        origin: Location<World>, directions: List<Vector3d>,
         targetDirection: Vector3d = Vector3d.ZERO, maxAngle: Double = 0.0
     ): List<Raycast> {
-        val result = ArrayList<Raycast>()
+        return directions.mapNotNull {
+            if (maxAngle > 0 && it.angle(targetDirection) > maxAngle) {
+                null
+            } else {
+                Raycast(
+                    origin = origin,
+                    direction = it,
+                    range = this.range,
+                    speed = this.speed,
+                    checkDiagonals = true
+                )
+            }
+        }
+    }
+
+    private fun calculateRaycastDirections(thetaMin: Double, thetaMax: Double): List<Vector3d> {
+        val directions = ArrayList<Vector3d>()
 
         forInclusive(from = thetaMin, to = thetaMax, step = this.angleTheta) { theta: Double ->
             val sinTheta: Double = sin(Math.toRadians(theta))
@@ -169,26 +179,14 @@ data class AirBurstAbility(
                 val sinPhi: Double = sin(Math.toRadians(phi))
                 val cosPhi: Double = cos(Math.toRadians(phi))
 
-                val x: Double = cosPhi * sinTheta
-                val y: Double = sinPhi * sinTheta
-                val z: Double = cosTheta
-
-                val direction = Vector3d(x, y, z)
-
-                if (maxAngle > 0 && direction.angle(targetDirection) > maxAngle) {
-                    return@forExclusive
-                }
-
-                result += Raycast(
-                    origin = origin,
-                    direction = direction,
-                    range = this.range,
-                    speed = this.speed,
-                    checkDiagonals = true
+                directions += Vector3d(
+                    cosPhi * sinTheta,
+                    sinPhi * sinTheta,
+                    cosTheta
                 )
             }
         }
 
-        return result
+        return directions
     }
 }
