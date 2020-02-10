@@ -60,7 +60,7 @@ class ScoreboardManager {
             }
 
             val score: Score = objective.getOrCreateScore(display)
-            score.score = index + 1
+            score.score = 9 - index
         }
 
         val scoreboard: Scoreboard = Scoreboard.builder()

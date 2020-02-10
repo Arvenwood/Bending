@@ -3,6 +3,8 @@ package arvenwood.bending.plugin.command
 import arvenwood.bending.api.ability.AbilityType
 import arvenwood.bending.api.config.AbilityConfig
 import arvenwood.bending.api.service.BenderService
+import org.spongepowered.api.Platform
+import org.spongepowered.api.Sponge
 import org.spongepowered.api.command.CommandException
 import org.spongepowered.api.command.CommandPermissionException
 import org.spongepowered.api.command.CommandResult
@@ -33,7 +35,7 @@ object CommandBendingBind : CommandExecutor {
 
         val config: AbilityConfig = args.requireOne("config")
 
-        if (!src.hasPermission("bending.user.bind.config.${config.name}")) {
+        if (!src.hasPermission("bending.config.${config.name}")) {
             throw CommandPermissionException(Text.of("You do not have permission to use that config!"))
         }
 

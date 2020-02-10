@@ -1,4 +1,4 @@
-package arvenwood.bending.plugin.projectile
+package arvenwood.bending.plugin.raycast
 
 import arvenwood.bending.api.ability.AbilityResult
 import arvenwood.bending.api.ability.AbilityResult.*
@@ -52,10 +52,13 @@ data class Raycast(
             return result
         }
 
-        this.location += this.direction * this.speedFactor
+        this.location = this.location.next()
 
         return Success
     }
+
+    fun Location<World>.next(): Location<World> =
+        this + direction * speedFactor
 
     inline fun affectLocations(
         source: Player, affected: MutableCollection<Location<World>>,

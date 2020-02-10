@@ -2,6 +2,7 @@ package arvenwood.bending.plugin.projectile
 
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.ability.air.AirConstants
+import arvenwood.bending.plugin.raycast.Raycast
 import org.spongepowered.api.block.BlockTypes
 import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.effect.sound.SoundType

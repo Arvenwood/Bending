@@ -10,8 +10,8 @@ import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
 import arvenwood.bending.plugin.projectile.AirRaycast
-import arvenwood.bending.plugin.projectile.Raycast
-import arvenwood.bending.plugin.projectile.advanceAll
+import arvenwood.bending.plugin.raycast.Raycast
+import arvenwood.bending.plugin.raycast.advanceAll
 import arvenwood.bending.plugin.util.forInclusive
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode

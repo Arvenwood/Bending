@@ -1,16 +1,15 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
-import arvenwood.bending.api.ability.AbilityResult.Success
-import arvenwood.bending.api.ability.StandardContext.currentLocation
+import arvenwood.bending.api.ability.AbilityResult.*
 import arvenwood.bending.api.ability.StandardContext.direction
 import arvenwood.bending.api.ability.StandardContext.origin
-import arvenwood.bending.api.ability.StandardContext.player
+import arvenwood.bending.api.protection.BuildProtectionService
 import arvenwood.bending.api.protection.PvpProtectionService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
+import arvenwood.bending.plugin.raycast.Raycast
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
@@ -51,9 +50,6 @@ data class FireBlastAbility(
 
     override val type: AbilityType<FireBlastAbility> = AbilityTypes.FIRE_BLAST
 
-    private val speedFactor: Double = this.speed * (50 / 1000.0)
-    private val rangeSquared: Double = this.range * this.range
-
     private val particleFlame: ParticleEffect = ParticleEffect.builder()
         .type(ParticleTypes.FLAME)
         .quantity(6)
@@ -69,70 +65,76 @@ data class FireBlastAbility(
     override fun prepare(player: Player, context: AbilityContext) {
         context[origin] = player.eyeLocation
         context[direction] = player.headDirection.normalize()
-        context[currentLocation] = player.eyeLocation
+    }
+
+    override fun validate(context: AbilityContext): Boolean {
+        val player: Player = context.player
+        val origin: Location<World> = context.require(origin)
+        return !BuildProtectionService.get().isProtected(player, origin)
     }
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
-        val player: Player = context[player] ?: return ErrorNoTarget
-
-        var location: Location<World> by context.by(currentLocation)
+        val player: Player = context.player
         val origin: Location<World> = context.require(origin)
         val direction: Vector3d = context.require(direction)
 
+        val raycast = Raycast(
+            origin = origin,
+            direction = direction,
+            range = this.range,
+            speed = this.speed,
+            checkDiagonals = true
+        )
+
+        val affectedEntities = HashSet<Entity>()
         abilityLoop {
             if (player.isRemoved) {
                 // Stop if this Player object is stale.
-                return AbilityResult.ErrorDied
+                return ErrorDied
             }
 
-            if (location.distanceSquared(origin) > this.rangeSquared) return Success
-            if (location.blockType.isSolid() || location.blockType.isLiquid()) return Success
+            val result: AbilityResult = raycast.advance { current: Location<World> ->
+                if (BuildProtectionService.get().isProtected(player, current)) return@advance ErrorProtected
 
-            val closest = location.getClosestEntity(radius)
-            if (closest != null && affect(context, closest)) return Success
+                affectEntities(player, affectedEntities, radius) { test: Entity ->
+                    affect(player, test)
+                }
 
-            // Move to the next position.
-            location = advanceLocation(location, direction) ?: return Success
+                if (showParticles) {
+                    playParticles(particleFlame)
+                    playParticles(particleSmoke)
+                }
+
+                if (Constants.RANDOM.nextInt(4) == 0) {
+                    playSounds(SoundTypes.BLOCK_FIRE_AMBIENT, 0.5, 1.0)
+                }
+
+                if (affectedEntities.size > 0) return Success
+                if (current.blockType.isSolid() || current.blockType.isLiquid()) return Success
+
+                return@advance Success
+            }
+
+            if (result != Success) {
+                return result
+            }
         }
 
         return Success
     }
 
-    private fun affect(context: AbilityContext, entity: Entity): Boolean {
-        val player: Player = context.require(player)
+    private fun Raycast.affect(source: Player, target: Entity): Boolean {
+        if (target.uniqueId == source.uniqueId) return false
+        if (PvpProtectionService.get().isProtected(source, target)) return false
 
-        if (entity.uniqueId == player.uniqueId) return false
-        if (PvpProtectionService.get().isProtected(player, entity)) return false
+        target.velocity = direction.mul(knockback)
 
-        val direction: Vector3d = context.require(direction)
-
-        entity.velocity = direction.mul(this.knockback)
-
-        if (entity is Living) {
-            entity.offer(Keys.FIRE_TICKS, this.fireTicks * 20)
-            entity.damage(this.damage, DamageSources.MAGIC)
+        if (target is Living) {
+            target.offer(Keys.FIRE_TICKS, fireTicks * 20)
+            target.damage(damage, DamageSources.FIRE_TICK)
             return true
         }
 
         return false
-    }
-
-    private fun advanceLocation(location: Location<World>, direction: Vector3d): Location<World>? {
-        if (this.showParticles) {
-            // Show the particles.
-            location.spawnParticles(particleFlame)
-            location.spawnParticles(particleSmoke)
-        }
-        if (Constants.RANDOM.nextInt(4) == 0) {
-            // Play fire bending sound, every now and then.
-            location.extent.playSound(SoundTypes.BLOCK_FIRE_AMBIENT, location.position, 0.5, 1.0)
-        }
-        if (location.isNearDiagonalWall(direction)) {
-            // Stop if we've hit a diagonal wall.
-            return null
-        }
-
-        // Move forward.
-        return location.add(direction.mul(this.speedFactor))
     }
 }

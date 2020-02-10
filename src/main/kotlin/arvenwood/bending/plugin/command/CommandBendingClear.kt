@@ -14,7 +14,7 @@ import org.spongepowered.api.text.format.TextColors
 object CommandBendingClear : CommandExecutor {
 
     val SPEC: CommandSpec = CommandSpec.builder()
-        .permission("bending.user.clear")
+        .permission("bending.user.clear.base")
         .executor(this)
         .build()
 

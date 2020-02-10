@@ -9,5 +9,7 @@ object CommandBending {
         .child(CommandBendingBind.SPEC, "bind", "b")
         .child(CommandBendingClear.SPEC, "clear")
         .child(CommandBendingCopy.SPEC, "copy")
+        .child(CommandBendingDisplay.SPEC, "display", "d")
+        .child(CommandBendingList.SPEC, "list", "l")
         .build()
 }

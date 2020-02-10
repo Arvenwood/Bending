@@ -17,7 +17,7 @@ import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
 import arvenwood.bending.plugin.projectile.AirRaycast
-import arvenwood.bending.plugin.projectile.Raycast
+import arvenwood.bending.plugin.raycast.Raycast
 import com.flowpowered.math.vector.Vector3d
 import kotlinx.coroutines.Job
 import ninja.leaping.configurate.ConfigurationNode
@@ -137,8 +137,8 @@ data class AirBlastAbility(
                 return ErrorDied
             }
 
-            val result: AbilityResult = raycast.advance {
-                if (BuildProtectionService.get().isProtected(player, it)) return@advance ErrorProtected
+            val result: AbilityResult = raycast.advance { current: Location<World> ->
+                if (BuildProtectionService.get().isProtected(player, current)) return@advance ErrorProtected
 
                 affectLocations(player, affectedLocations, radius) { test: Location<World> ->
                     AirRaycast.extinguishFlames(test)
@@ -158,6 +158,8 @@ data class AirBlastAbility(
                 if (Constants.RANDOM.nextInt(4) == 0) {
                     playSounds(SoundTypes.ENTITY_CREEPER_HURT, 0.5, 1.0)
                 }
+
+                if (current.blockType.isSolid() || current.blockType.isLiquid()) return Success
 
                 return@advance Success
             }

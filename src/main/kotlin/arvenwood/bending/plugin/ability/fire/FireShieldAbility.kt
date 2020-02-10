@@ -42,20 +42,22 @@ data class FireShieldAbility(
 
     private val particleFlame: ParticleEffect = ParticleEffect.builder()
         .type(ParticleTypes.FLAME)
-        .quantity(1)
+        .quantity(3)
         .offset(Vector3d(0.1, 0.1, 0.1))
         .build()
 
     private val particleSmoke: ParticleEffect = ParticleEffect.builder()
         .type(ParticleTypes.SMOKE)
-        .quantity(1)
+        .quantity(3)
         .offset(Vector3d.ZERO)
         .build()
+
+    private val offsets: Array<out List<Vector3d>> = this.calculateOffsets()
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context.require(player)
 
-        var increment = 20
+        var index = 0
         val startTime: Long = System.currentTimeMillis()
         abilityLoopUnsafe {
             if (!player.getOrElse(Keys.IS_SNEAKING, false)) {
@@ -65,33 +67,24 @@ data class FireShieldAbility(
                 return Success
             }
 
-            for (theta: Int in 0 until 180 step increment) {
-                for (phi: Int in 0 until 360 step increment) {
-                    val rTheta: Double = Math.toRadians(theta.toDouble())
-                    val rPhi: Double = Math.toRadians(phi.toDouble())
+            for (offset: Vector3d in this.offsets[index]) {
+                val displayLocation: Location<World> = player.location.add(offset)
 
-                    val displayLoc: Location<World> = player.location.add(
-                        this.radius / 1.5 * cos(rPhi) * sin(rTheta),
-                        this.radius / 1.5 * cos(rTheta),
-                        this.radius / 1.5 * sin(rPhi) * sin(rTheta)
-                    )
-
-                    if (Constants.RANDOM.nextInt(6) == 0) {
-                        displayLoc.spawnParticles(this.particleFlame)
-                    }
-                    if (Constants.RANDOM.nextInt(4) == 0) {
-                        displayLoc.spawnParticles(this.particleSmoke)
-                    }
-                    if (Constants.RANDOM.nextInt(7) == 0) {
-                        // Play fire bending sound, every now and then.
-                        player.world.playSound(SoundTypes.BLOCK_FIRE_AMBIENT, player.position, 0.5, 1.0)
-                    }
+                if (Constants.RANDOM.nextInt(6) == 0) {
+                    displayLocation.spawnParticles(this.particleFlame)
+                }
+                if (Constants.RANDOM.nextInt(4) == 0) {
+                    displayLocation.spawnParticles(this.particleSmoke)
+                }
+                if (Constants.RANDOM.nextInt(7) == 0) {
+                    // Play fire bending sound, every now and then.
+                    player.world.playSound(SoundTypes.BLOCK_FIRE_AMBIENT, player.position, 0.5, 1.0)
                 }
             }
 
-            increment += 20
-            if (increment >= 70) {
-                increment = 20
+            index++
+            if (index == 3) {
+                index = 0
             }
 
             for (test: Location<World> in player.location.getNearbyLocations(this.radius)) {
@@ -113,5 +106,30 @@ data class FireShieldAbility(
                 }
             }
         }
+    }
+
+    private fun calculateOffsets(): Array<out List<Vector3d>> {
+        val result: Array<MutableList<Vector3d>> = Array(3) { ArrayList<Vector3d>() }
+
+        for (i: Int in 0..2) {
+            val increment: Int = i * 20 + 20
+
+            for (theta: Int in 0 until 180 step increment) {
+                for (phi: Int in 0 until 360 step increment) {
+                    val rTheta: Double = Math.toRadians(theta.toDouble())
+                    val rPhi: Double = Math.toRadians(phi.toDouble())
+
+                    val offset = Vector3d(
+                        this.radius / 1.5 * cos(rPhi) * sin(rTheta),
+                        this.radius / 1.5 * cos(rTheta),
+                        this.radius / 1.5 * sin(rPhi) * sin(rTheta)
+                    )
+
+                    result[i].add(offset)
+                }
+            }
+        }
+
+        return result
     }
 }

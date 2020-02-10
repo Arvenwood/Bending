@@ -16,7 +16,7 @@ import org.spongepowered.api.text.Text
 object CommandBendingCopy : CommandExecutor {
 
     val SPEC: CommandSpec = CommandSpec.builder()
-        .permission("bending.user.copy")
+        .permission("bending.user.copy.base")
         .arguments(GenericArguments.player(Text.of("player")))
         .executor(this)
         .build()

@@ -5,6 +5,9 @@ import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.CatalogType
 import org.spongepowered.api.Sponge
 import org.spongepowered.api.text.Text
+import org.spongepowered.api.text.action.TextAction
+import org.spongepowered.api.text.action.TextActions
+import org.spongepowered.api.text.format.TextColors
 import org.spongepowered.api.util.ResettableBuilder
 import kotlin.coroutines.CoroutineContext
 
@@ -16,6 +19,12 @@ interface AbilityType<out T : Ability<T>> : CatalogType, CoroutineContext.Elemen
         fun <T : Ability<T>> builder(): Builder<T> =
             @Suppress("UNCHECKED_CAST")
             (Sponge.getRegistry().createBuilder(Builder::class.java) as Builder<T>)
+
+        operator fun get(id: String): AbilityType<*>? =
+            Sponge.getRegistry().getType(AbilityType::class.java, id).orElse(null)
+
+        val all: Collection<AbilityType<*>>
+            get() = Sponge.getRegistry().getAllOf(AbilityType::class.java)
     }
 
     override fun getId(): String
@@ -31,6 +40,12 @@ interface AbilityType<out T : Ability<T>> : CatalogType, CoroutineContext.Elemen
     val description: Text
 
     fun load(node: ConfigurationNode): T
+
+    fun show(): Text =
+        Text.builder(this.name)
+            .color(this.element.color)
+            .onHover(TextActions.showText(Text.of(this.element.color, this.description, "\n\nInstructions:\n", TextColors.GOLD, this.instructions)))
+            .build()
 
     override val key: CoroutineContext.Key<*> get() = AbilityType
 

@@ -1,11 +1,13 @@
 package arvenwood.bending.plugin.ability.fire
 
 import arvenwood.bending.api.ability.*
-import arvenwood.bending.api.ability.AbilityResult.ErrorNoTarget
-import arvenwood.bending.api.ability.AbilityResult.Success
+import arvenwood.bending.api.ability.AbilityResult.*
+import arvenwood.bending.api.ability.StandardContext.direction
+import arvenwood.bending.api.ability.StandardContext.origin
 import arvenwood.bending.api.protection.BuildProtectionService
 import arvenwood.bending.api.util.*
 import arvenwood.bending.plugin.ability.AbilityTypes
+import arvenwood.bending.plugin.raycast.Raycast
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.block.BlockTypes
@@ -40,79 +42,76 @@ data class FireCombustionAbility(
 
     override val type: AbilityType<FireCombustionAbility> = AbilityTypes.FIRE_COMBUSTION
 
-    private val speedFactor: Double = this.speed * (50 / 1000.0)
-    private val rangeSquared: Double = this.range * this.range
-
     override fun prepare(player: Player, context: AbilityContext) {
-        context[StandardContext.direction] = player.headDirection.normalize()
-        context[StandardContext.origin] = player.eyeLocation
-        context[StandardContext.currentLocation] = player.eyeLocation
+        context[direction] = player.headDirection.normalize()
+        context[origin] = player.eyeLocation
     }
 
     override fun validate(context: AbilityContext): Boolean {
-        val player: Player = context.require(StandardContext.player)
+        val player: Player = context.player
         return !BuildProtectionService.get().isProtected(player, player.location)
     }
 
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
-        val player = context[StandardContext.player] ?: return ErrorNoTarget
+        val player: Player = context.player
 
-        var location: Location<World> by context.by(StandardContext.currentLocation)
-        val direction: Vector3d = context.require(StandardContext.direction)
-        val origin: Location<World> = context.require(StandardContext.origin)
+        val origin: Location<World> = context.require(origin)
+        val direction: Vector3d = context.require(direction)
 
-        abilityLoop {
-            if (location.distanceSquared(origin) > this.rangeSquared) {
-                return Success
+        val raycast = Raycast(
+            origin = origin,
+            direction = direction,
+            range = this.range,
+            speed = this.speed,
+            checkDiagonals = true
+        )
+
+        val affectedEntities = HashSet<Entity>()
+        abilityLoopUnsafe {
+            if (player.isRemoved) return ErrorDied
+
+            raycast.advance { current: Location<World> ->
+                val fireworks: ParticleEffect = ParticleEffect.builder()
+                    .type(ParticleTypes.FIREWORKS_SPARK)
+                    .quantity(5)
+                    .offset(Vector3d(Math.random() / 2, Math.random() / 2, Math.random() / 2))
+                    .build()
+                val flame: ParticleEffect = ParticleEffect.builder()
+                    .type(ParticleTypes.FLAME)
+                    .quantity(2)
+                    .offset(Vector3d(Math.random() / 2, Math.random() / 2, Math.random() / 2))
+                    .build()
+
+                playParticles(fireworks)
+                playParticles(flame)
+                playSounds(SoundTypes.ENTITY_FIREWORK_BLAST, 0.5, 1.0)
+
+                val forward: Location<World> = current.next()
+
+                if (forward.blockType != BlockTypes.AIR && !forward.blockType.isWater()) {
+                    createExplosion(forward, power, canBreakBlocks)
+                    return Success
+                }
+
+                affectEntities(player, affectedEntities, radius) { test: Entity ->
+                    if (test !is Living || test.uniqueId == player.uniqueId) {
+                        false
+                    } else {
+                        createExplosion(forward, power, canBreakBlocks)
+                        return Success
+                    }
+                }
+
+                return@advance Success
             }
-
-            if (location.blockType != BlockTypes.AIR && !location.blockType.isWater()) {
-                createExplosion(location, this.power, this.canBreakBlocks)
-                return Success
-            }
-
-            for (entity: Entity in location.getNearbyEntities(this.radius)) {
-                if (entity !is Living) continue
-                if (entity.uniqueId == player.uniqueId) continue
-
-                createExplosion(location, this.power, this.canBreakBlocks)
-                return Success
-            }
-
-            location = advanceLocation(location, direction)
         }
-
-        return Success
-    }
-
-    /**
-     * Calculate the next location to blast.
-     *
-     * @return The next location, or null if a wall is hit.
-     */
-    private fun advanceLocation(location: Location<World>, direction: Vector3d): Location<World> {
-        val fireworks: ParticleEffect = ParticleEffect.builder()
-            .type(ParticleTypes.FIREWORKS_SPARK)
-            .quantity(5)
-            .offset(Vector3d(Math.random() / 2, Math.random() / 2, Math.random() / 2))
-            .build()
-        val flame: ParticleEffect = ParticleEffect.builder()
-            .type(ParticleTypes.FLAME)
-            .quantity(2)
-            .offset(Vector3d(Math.random() / 2, Math.random() / 2, Math.random() / 2))
-            .build()
-        location.spawnParticles(fireworks)
-        location.spawnParticles(flame)
-        location.extent.playSound(SoundTypes.ENTITY_FIREWORK_BLAST, location.position, 0.5, 1.0)
-
-        return location.add(direction.mul(this.speedFactor))
     }
 
     /**
      * Creates an explosion at the target location.
      */
     private fun createExplosion(location: Location<World>, power: Float, canBreakBlocks: Boolean) {
-        val explosion = Explosion.builder()
+        val explosion: Explosion = Explosion.builder()
             .location(location)
             .radius(power)
             .shouldDamageEntities(true)

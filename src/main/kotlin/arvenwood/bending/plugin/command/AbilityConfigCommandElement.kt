@@ -16,7 +16,8 @@ fun abilityConfig(key: Text, typeKey: Text): CommandElement =
 private class AbilityConfigCommandElement(key: Text, private val typeKey: Text) : CommandElement(key) {
 
     override fun parse(source: CommandSource, args: CommandArgs, context: CommandContext) {
-        val type: AbilityType<*> = context.getOne<AbilityType<*>>(typeKey).orElse(null) ?: return
+        val type: AbilityType<*> = context.getOne<AbilityType<*>>(typeKey).orElse(null)
+            ?: throw args.createError(Text.of("Unknown ability type."))
         val configName: String = args.next()
 
         val config: AbilityConfig = AbilityConfigService.get()[configName, type]
