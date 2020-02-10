@@ -44,6 +44,9 @@ data class AirScooterAbility(
 
     private val particleEffect: ParticleEffect = EffectService.get().createParticle(Elements.AIR, 1, Vector3d.ZERO)
 
+    // offsets[phiIndex][thetaIndex] = offset
+    private val offsets: Array<Array<Vector3d>> = this.calculateOffsets()
+
     override fun preempt(context: AbilityContext, executionType: AbilityExecutionType) {
         val player: Player = context.require(StandardContext.player)
         // Cancel all other air scooters.
@@ -59,8 +62,8 @@ data class AirScooterAbility(
         player.isSprinting = false
         player.isSneaking = false
 
+        var phiIndex = 0
         val startTime: EpochTime = EpochTime.now()
-        var phi = 0.0
         abilityLoopUnsafe {
             if (player.isSneaking) return Success
             if (this.duration > 0 && startTime.elapsedNow() >= this.duration) return Success
@@ -72,7 +75,12 @@ data class AirScooterAbility(
                     return Success
                 }
 
-                phi = this.displayScooter(phi, player.location)
+                this.displayScooter(phiIndex, player.location)
+
+                phiIndex++
+                if (phiIndex == 5) {
+                    phiIndex = 0
+                }
             }
 
             val floor: Location<World> = this.getFloor(player.eyeLocation) ?: return Success
@@ -93,9 +101,8 @@ data class AirScooterAbility(
                 velocity = velocity.add(0.0, 0.7, 0.0)
             }
 
-            var location: Location<World> = player.location
-            if (!location.add(0.0, 2.0, 0.0).blockType.isWater()) {
-                player.location = location.withY(floor.y + 1.5)
+            if (!player.location.add(0.0, 2.0, 0.0).blockType.isWater()) {
+                player.location = player.location.withY(floor.y + 1.5)
             } else {
                 return@abilityLoopUnsafe
             }
@@ -105,7 +112,7 @@ data class AirScooterAbility(
 
             if (Constants.RANDOM.nextInt(4) == 0) {
                 // Play the sounds every now and then.
-                location.extent.playSound(SoundTypes.ENTITY_CREEPER_HURT, location.position, 0.5, 1.0)
+                player.location.extent.playSound(SoundTypes.ENTITY_CREEPER_HURT, player.location.position, 0.5, 1.0)
             }
         }
     }
@@ -128,32 +135,39 @@ data class AirScooterAbility(
         return null
     }
 
-    /**
-     * @param phi The number of rings of the particle sphere
-     * @param origin Where to display the scooter
-     * @return The new phi value
-     */
-    private fun displayScooter(phi: Double, origin: Location<World>): Double {
-        val newPhi: Double = phi + TWO_FIFTHS_PI
-        val sinPhi: Double = sin(newPhi)
-        val cosPhi: Double = cos(newPhi)
+    private fun displayScooter(phiIndex: Int, origin: Location<World>) {
+        for (offset: Vector3d in this.offsets[phiIndex]) {
+            origin.add(offset).spawnParticles(this.particleEffect)
+            origin.sub(offset).spawnParticles(this.particleEffect)
+        }
+    }
 
-        forInclusive(from = 0.0, to = TWO_PI, step = TENTH_PI) { theta: Double ->
-            val x: Double = PARTICLE_RADIUS * cos(theta) * sinPhi
-            val y: Double = PARTICLE_RADIUS * cosPhi
-            val z: Double = PARTICLE_RADIUS * sin(theta) * sinPhi
-
-            origin.add(x, y, z).spawnParticles(this.particleEffect)
-            origin.sub(x, y, z).spawnParticles(this.particleEffect)
+    // offsets[phiIndex][thetaIndex] = offset
+    private fun calculateOffsets(): Array<Array<Vector3d>> =
+        Array(size = 5) { index: Int ->
+            calculateOffsets(TWO_FIFTHS_PI * index)
         }
 
-        return newPhi
+    // offsets[thetaIndex] = offset
+    private fun calculateOffsets(phi: Double): Array<Vector3d> {
+        val sinPhi: Double = sin(phi)
+        val cosPhi: Double = cos(phi)
+
+        return Array(size = 20) { index: Int ->
+            val theta: Double = TENTH_PI * index
+
+            Vector3d(
+                PARTICLE_RADIUS * cos(theta) * sinPhi,
+                PARTICLE_RADIUS * cosPhi,
+                PARTICLE_RADIUS * sin(theta) * sinPhi
+            )
+        }
     }
 
     companion object {
-        private const val TWO_PI: Double = Math.PI * 2
+        private const val PARTICLE_RADIUS: Double = 0.6
+
         private const val TWO_FIFTHS_PI: Double = Math.PI * 2 / 5
         private const val TENTH_PI: Double = Math.PI / 10
-        private const val PARTICLE_RADIUS: Double = 0.6
     }
 }
