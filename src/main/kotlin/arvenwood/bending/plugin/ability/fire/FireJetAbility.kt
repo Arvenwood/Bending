@@ -7,6 +7,7 @@ import arvenwood.bending.api.util.isWater
 import arvenwood.bending.api.util.spawnParticles
 import arvenwood.bending.plugin.Constants
 import arvenwood.bending.plugin.ability.AbilityTypes
+import arvenwood.bending.plugin.util.EpochTime
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.data.key.Keys
@@ -44,7 +45,7 @@ data class FireJetAbility(
     override suspend fun execute(context: AbilityContext, executionType: AbilityExecutionType): AbilityResult {
         val player: Player = context.player
 
-        val startTime: Long = System.currentTimeMillis()
+        val startTime: EpochTime = EpochTime.now()
         abilityLoopUnsafe {
             if (player.isRemoved) {
                 // Stop if this Player object is stale.
@@ -54,7 +55,7 @@ data class FireJetAbility(
                 // Crashed into the water.
                 return ErrorUnderWater
             }
-            if (startTime + this.duration <= System.currentTimeMillis()) {
+            if (startTime.elapsedNow() >= this.duration) {
                 // Duration limit exceeded.
                 return Success
             }
@@ -68,7 +69,7 @@ data class FireJetAbility(
             player.location.spawnParticles(this.particleSmoke)
 
             // Launch them a bit.
-            val timeFactor: Double = 1 - (System.currentTimeMillis() - startTime) / (2.0 * this.duration)
+            val timeFactor: Double = 1 - (startTime.elapsedNow()) / (2.0 * this.duration)
             player.velocity = player.headDirection.normalize().mul(this.speed * timeFactor)
             player.offer(Keys.FALL_DISTANCE, 0F)
         }
