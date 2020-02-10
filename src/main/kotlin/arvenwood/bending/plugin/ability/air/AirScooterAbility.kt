@@ -75,7 +75,10 @@ data class AirScooterAbility(
                     return Success
                 }
 
-                this.displayScooter(phiIndex, player.location)
+                for (offset: Vector3d in this.offsets[phiIndex]) {
+                    player.location.add(offset).spawnParticles(this.particleEffect)
+                    player.location.sub(offset).spawnParticles(this.particleEffect)
+                }
 
                 phiIndex++
                 if (phiIndex == 5) {
@@ -133,13 +136,6 @@ data class AirScooterAbility(
             }
         }
         return null
-    }
-
-    private fun displayScooter(phiIndex: Int, origin: Location<World>) {
-        for (offset: Vector3d in this.offsets[phiIndex]) {
-            origin.add(offset).spawnParticles(this.particleEffect)
-            origin.sub(offset).spawnParticles(this.particleEffect)
-        }
     }
 
     // offsets[phiIndex][thetaIndex] = offset
