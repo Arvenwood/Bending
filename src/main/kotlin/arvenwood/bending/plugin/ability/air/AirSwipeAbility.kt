@@ -130,7 +130,7 @@ data class AirSwipeAbility(
     private fun createRaycasts(
         origin: Location<World>, direction: Vector3d
     ): List<Raycast> {
-        val result = ArrayList<Raycast>()
+        val raycasts = ArrayList<Raycast>()
 
         forInclusive(from = -this.arcRadians, to = this.arcRadians, step = this.arcIncrementRadians) { angle: Double ->
             val sinAngle: Double = sin(angle)
@@ -139,16 +139,16 @@ data class AirSwipeAbility(
             val vx: Double = direction.x * cosAngle - direction.z * sinAngle
             val vz: Double = direction.x * sinAngle + direction.z * cosAngle
 
-            result += Raycast(
+            raycasts += Raycast(
                 origin = origin,
-                direction = direction.withXZ(vx, vz),
+                direction = Vector3d(vx, direction.y, vz),
                 range = this.range,
                 speed = this.speed,
                 checkDiagonals = true
             )
         }
 
-        return result
+        return raycasts
     }
 
 }
