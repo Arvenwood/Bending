@@ -17,6 +17,7 @@ import pw.dotdash.bending.api.element.Elements
 import pw.dotdash.bending.api.protection.BuildProtectionService
 import pw.dotdash.bending.api.ray.FastRaycast
 import pw.dotdash.bending.api.ray.advanceAll
+import pw.dotdash.bending.api.ray.progressAll
 import pw.dotdash.bending.api.ray.pushEntity
 import pw.dotdash.bending.api.util.*
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
@@ -56,7 +57,7 @@ data class AirSwipeAbility(
 
     private val particleEffect: ParticleEffect = EffectService.getInstance().createParticle(Elements.AIR, this.numParticles, VectorUtil.VECTOR_0_2)
 
-    private val transformationMatrices: List<Matrix3d> = this.createTransformationMatrices()
+    private val transformationMatrices: Array<Matrix3d> = this.createTransformationMatrices().toTypedArray()
 
     override suspend fun CoroutineTask.activate(context: AbilityContext, executionType: AbilityExecutionType) {
         val player: Player = context.require(PLAYER)
@@ -95,13 +96,13 @@ data class AirSwipeAbility(
     }
 
     private suspend fun CoroutineTask.swipe(source: Player, origin: Location<World>, damage: Double, pushFactor: Double) {
-        val raycasts: List<FastRaycast> = createRaycasts(origin, source.headDirection.normalize())
+        val raycasts: Array<FastRaycast> = createRaycasts(origin, source.headDirection.normalize())
 
         val affectedEntities = HashSet<Entity>()
         abilityLoopUnsafe {
-            val anySucceeded: Boolean = raycasts.advanceAll {
+            val anySucceeded: Boolean = raycasts.progressAll {
                 if (BuildProtectionService.getInstance().isProtected(source, it)) {
-                    return@advanceAll false
+                    return@progressAll false
                 }
 
                 affectEntities(source, affectedEntities, radius) { test: Entity ->
@@ -115,7 +116,7 @@ data class AirSwipeAbility(
                     playSounds(SoundTypes.ENTITY_CREEPER_HURT, 0.5, 1.0)
                 }
 
-                return@advanceAll true
+                return@progressAll true
             }
 
             if (!anySucceeded) {
@@ -124,8 +125,8 @@ data class AirSwipeAbility(
         }
     }
 
-    private fun createRaycasts(origin: Location<World>, direction: Vector3d): List<FastRaycast> =
-        this.transformationMatrices.map { matrix: Matrix3d ->
+    private fun createRaycasts(origin: Location<World>, direction: Vector3d): Array<FastRaycast> =
+        this.transformationMatrices.mapToArray { matrix: Matrix3d ->
             FastRaycast(
                 origin = origin,
                 direction = matrix.transform(direction),
