@@ -6,21 +6,26 @@ import org.spongepowered.api.effect.particle.ParticleEffect
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.player.Player
+import org.spongepowered.api.plugin.PluginContainer
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
-import pw.dotdash.bending.api.ability.*
+import pw.dotdash.bending.api.ability.AbilityContext
 import pw.dotdash.bending.api.ability.AbilityContextKeys.FALL_DISTANCE
 import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
+import pw.dotdash.bending.api.ability.AbilityExecutionType
 import pw.dotdash.bending.api.ability.AbilityExecutionTypes.FALL
 import pw.dotdash.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
+import pw.dotdash.bending.api.ability.CoroutineAbility
+import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.effect.EffectService
 import pw.dotdash.bending.api.element.Elements
 import pw.dotdash.bending.api.protection.BuildProtectionService
 import pw.dotdash.bending.api.ray.AirRaycast
 import pw.dotdash.bending.api.ray.FastRaycast
-import pw.dotdash.bending.api.ray.advanceAll
+import pw.dotdash.bending.api.ray.progressAll
 import pw.dotdash.bending.api.ray.pushEntity
 import pw.dotdash.bending.api.util.*
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 import kotlin.math.cos
 import kotlin.math.sin
@@ -54,13 +59,16 @@ data class AirBurstAbility(
         anglePhi = node.getNode("anglePhi").double
     )
 
+    override val plugin: PluginContainer
+        get() = BendingClassic.PLUGIN
+
     private val particleEffect: ParticleEffect =
         EffectService.getInstance().createParticle(Elements.AIR, this.numSneakParticles, VectorUtil.VECTOR_0_275)
 
     private val maxConeRadians: Double = Math.toRadians(this.maxConeDegrees)
 
-    private val fallDirections: List<Vector3d> = this.calculateRaycastDirections(75.0, 105.0)
-    private val sphereDirections: List<Vector3d> = this.calculateRaycastDirections(0.0, 180.0)
+    private val fallDirections: Array<Vector3d> = this.calculateRaycastDirections(75.0, 105.0)
+    private val sphereDirections: Array<Vector3d> = this.calculateRaycastDirections(0.0, 180.0)
 
     override suspend fun CoroutineTask.activate(context: AbilityContext, executionType: AbilityExecutionType) {
         val player: Player = context.require(PLAYER)
@@ -75,7 +83,7 @@ data class AirBurstAbility(
             LEFT_CLICK -> {
                 this.burst(
                     source = player,
-                    origin = player.location,
+                    origin = player.eyeLocation,
                     directions = sphereDirections,
                     targetDirection = player.headDirection.normalize(),
                     maxAngle = maxConeRadians
@@ -109,7 +117,7 @@ data class AirBurstAbility(
     }
 
     private suspend fun CoroutineTask.burst(
-        source: Player, origin: Location<World>, directions: List<Vector3d>,
+        source: Player, origin: Location<World>, directions: Array<Vector3d>,
         targetDirection: Vector3d = Vector3d.ZERO, maxAngle: Double = 0.0
     ) {
         val raycasts: List<FastRaycast> = createRaycasts(origin, directions, targetDirection, maxAngle)
@@ -117,8 +125,12 @@ data class AirBurstAbility(
         val affectedLocations = HashSet<Location<World>>()
         val affectedEntities = HashSet<Entity>()
         abilityLoopUnsafe {
-            val anySucceeded: Boolean = raycasts.advanceAll {
-                if (BuildProtectionService.getInstance().isProtected(source, it)) return@advanceAll false
+            if (source.isRemoved) {
+                return
+            }
+
+            val anySucceeded: Boolean = raycasts.progressAll {
+                if (BuildProtectionService.getInstance().isProtected(source, it)) return@progressAll false
 
                 affectLocations(source, affectedLocations, blastRadius) { test: Location<World> ->
                     AirRaycast.extinguishFlames(test)
@@ -136,7 +148,7 @@ data class AirBurstAbility(
                     playSounds(SoundTypes.ENTITY_CREEPER_HURT, 0.5, 1.0)
                 }
 
-                return@advanceAll true
+                return@progressAll true
             }
 
             if (!anySucceeded) {
@@ -146,7 +158,7 @@ data class AirBurstAbility(
     }
 
     private fun createRaycasts(
-        origin: Location<World>, directions: List<Vector3d>,
+        origin: Location<World>, directions: Array<Vector3d>,
         targetDirection: Vector3d = Vector3d.ZERO, maxAngle: Double = 0.0
     ): List<FastRaycast> {
         return directions.mapNotNull {
@@ -164,7 +176,7 @@ data class AirBurstAbility(
         }
     }
 
-    private fun calculateRaycastDirections(thetaMin: Double, thetaMax: Double): List<Vector3d> {
+    private fun calculateRaycastDirections(thetaMin: Double, thetaMax: Double): Array<Vector3d> {
         val directions = ArrayList<Vector3d>()
 
         forInclusive(from = thetaMin, to = thetaMax, step = this.angleTheta) { theta: Double ->
@@ -184,6 +196,6 @@ data class AirBurstAbility(
             }
         }
 
-        return directions
+        return directions.toTypedArray()
     }
 }

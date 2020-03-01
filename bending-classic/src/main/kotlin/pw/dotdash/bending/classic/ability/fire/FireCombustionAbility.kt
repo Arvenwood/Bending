@@ -10,16 +10,22 @@ import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.Living
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.cause.Cause
+import org.spongepowered.api.plugin.PluginContainer
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
 import org.spongepowered.api.world.explosion.Explosion
-import pw.dotdash.bending.api.ability.*
-import pw.dotdash.bending.api.ability.AbilityContextKeys.*
+import pw.dotdash.bending.api.ability.AbilityContext
+import pw.dotdash.bending.api.ability.AbilityContextKeys.ORIGIN
+import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
+import pw.dotdash.bending.api.ability.AbilityExecutionType
+import pw.dotdash.bending.api.ability.CoroutineAbility
+import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.protection.BuildProtectionService
 import pw.dotdash.bending.api.ray.FastRaycast
 import pw.dotdash.bending.api.util.eyeLocation
 import pw.dotdash.bending.api.util.headDirection
 import pw.dotdash.bending.api.util.isWater
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 
 data class FireCombustionAbility(
@@ -40,6 +46,9 @@ data class FireCombustionAbility(
         range = node.getNode("range").double,
         speed = node.getNode("speed").double
     )
+
+    override val plugin: PluginContainer
+        get() = BendingClassic.PLUGIN
 
     override fun prepare(cause: Cause, context: AbilityContext) {
         val player: Player = cause.first(Player::class.java).get()

@@ -7,12 +7,17 @@ import org.spongepowered.api.effect.particle.ParticleEffect
 import org.spongepowered.api.effect.particle.ParticleTypes
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.living.player.Player
-import pw.dotdash.bending.api.ability.*
+import org.spongepowered.api.plugin.PluginContainer
+import pw.dotdash.bending.api.ability.AbilityContext
 import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
+import pw.dotdash.bending.api.ability.AbilityExecutionType
+import pw.dotdash.bending.api.ability.CoroutineAbility
+import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.util.EpochTime
 import pw.dotdash.bending.api.util.headDirection
 import pw.dotdash.bending.api.util.isWater
 import pw.dotdash.bending.api.util.spawnParticles
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 import kotlin.random.Random
 
@@ -28,6 +33,9 @@ data class FireJetAbility(
         speed = node.getNode("speed").double,
         showGliding = node.getNode("showGliding").boolean
     )
+
+    override val plugin: PluginContainer
+        get() = BendingClassic.PLUGIN
 
     private val particleFlame: ParticleEffect = ParticleEffect.builder()
         .type(ParticleTypes.FLAME)

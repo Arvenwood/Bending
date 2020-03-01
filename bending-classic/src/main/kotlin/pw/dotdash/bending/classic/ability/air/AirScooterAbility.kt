@@ -5,16 +5,21 @@ import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.effect.particle.ParticleEffect
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.living.player.Player
+import org.spongepowered.api.plugin.PluginContainer
 import org.spongepowered.api.util.Direction.UP
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
-import pw.dotdash.bending.api.ability.*
+import pw.dotdash.bending.api.ability.AbilityContext
 import pw.dotdash.bending.api.ability.AbilityContextKeys.BENDER
 import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
+import pw.dotdash.bending.api.ability.AbilityExecutionType
+import pw.dotdash.bending.api.ability.CoroutineAbility
+import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.bender.Bender
 import pw.dotdash.bending.api.effect.EffectService
 import pw.dotdash.bending.api.element.Elements
 import pw.dotdash.bending.api.util.*
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 import kotlin.math.cos
 import kotlin.math.sin
@@ -36,6 +41,9 @@ data class AirScooterAbility(
         radius = node.getNode("radius").double,
         speed = node.getNode("speed").double
     )
+
+    override val plugin: PluginContainer
+        get() = BendingClassic.PLUGIN
 
     private val minVelocitySquared: Double = (this.speed * 0.3) * (this.speed * 0.3)
 
@@ -59,7 +67,7 @@ data class AirScooterAbility(
         player.isSprinting = false
         player.isSneaking = false
 
-        var phiIndex = 0
+        val iterator: Iterator<Array<Vector3d>> = offsets.loopedIterator()
         val startTime: EpochTime = EpochTime.now()
         abilityLoopUnsafe {
             if (player.isSneaking) {
@@ -76,14 +84,11 @@ data class AirScooterAbility(
                     return
                 }
 
-                for (offset: Vector3d in offsets[phiIndex]) {
-                    player.location.add(offset).spawnParticles(particleEffect)
-                    player.location.sub(offset).spawnParticles(particleEffect)
-                }
-
-                phiIndex++
-                if (phiIndex == 5) {
-                    phiIndex = 0
+                if (iterator.hasNext()) {
+                    for (offset: Vector3d in iterator.next()) {
+                        player.location.add(offset).spawnParticles(particleEffect)
+                        player.location.sub(offset).spawnParticles(particleEffect)
+                    }
                 }
             }
 
@@ -139,27 +144,21 @@ data class AirScooterAbility(
         return null
     }
 
-    // offsets[phiIndex][thetaIndex] = offset
     private fun calculateOffsets(): Array<Array<Vector3d>> =
-        Array(size = 5) { index: Int ->
-            calculateOffsets(TWO_FIFTHS_PI * index)
+        Array(size = 5) { phiIndex: Int ->
+            val sinPhi: Double = sin(TWO_FIFTHS_PI * phiIndex)
+            val cosPhi: Double = cos(TWO_FIFTHS_PI * phiIndex)
+
+            Array(size = 20) { thetaIndex: Int ->
+                val theta: Double = TENTH_PI * thetaIndex
+
+                Vector3d(
+                    PARTICLE_RADIUS * cos(theta) * sinPhi,
+                    PARTICLE_RADIUS * cosPhi,
+                    PARTICLE_RADIUS * sin(theta) * sinPhi
+                )
+            }
         }
-
-    // offsets[thetaIndex] = offset
-    private fun calculateOffsets(phi: Double): Array<Vector3d> {
-        val sinPhi: Double = sin(phi)
-        val cosPhi: Double = cos(phi)
-
-        return Array(size = 20) { index: Int ->
-            val theta: Double = TENTH_PI * index
-
-            Vector3d(
-                PARTICLE_RADIUS * cos(theta) * sinPhi,
-                PARTICLE_RADIUS * cosPhi,
-                PARTICLE_RADIUS * sin(theta) * sinPhi
-            )
-        }
-    }
 
     companion object {
         private const val PARTICLE_RADIUS: Double = 0.6

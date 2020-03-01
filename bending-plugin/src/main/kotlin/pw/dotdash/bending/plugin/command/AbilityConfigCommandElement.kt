@@ -19,7 +19,7 @@ private class AbilityConfigCommandElement(key: Text, private val typeKey: Text) 
             ?: throw args.createError(Text.of("Unknown ability type."))
         val configName: String = args.next()
 
-        val config: AbilityConfig = AbilityConfig.get(configName).unwrap()?.takeIf { it.load(type).isPresent }
+        val config: AbilityConfig = AbilityConfig.get(configName).unwrap()?.takeIf { type in it.loader }
             ?: throw args.createError(Text.of("No config for ability '${type.name}' with name '$configName'"))
 
         context.putArg(this.untranslatedKey!!, config)
@@ -27,7 +27,7 @@ private class AbilityConfigCommandElement(key: Text, private val typeKey: Text) 
 
     override fun complete(src: CommandSource, args: CommandArgs, context: CommandContext): List<String> {
         val type: AbilityType = context.getOne<AbilityType>(this.typeKey).unwrap() ?: return emptyList()
-        return AbilityConfig.getAll().asSequence().filter { it.load(type).isPresent }.map { it.id }.toList()
+        return AbilityConfig.getAll().asSequence().filter { type in it.loader }.map { it.id }.toList()
     }
 
     override fun parseValue(source: CommandSource, args: CommandArgs): Any? = null

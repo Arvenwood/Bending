@@ -10,13 +10,18 @@ import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.Living
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.cause.entity.damage.source.DamageSources
+import org.spongepowered.api.plugin.PluginContainer
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
-import pw.dotdash.bending.api.ability.*
+import pw.dotdash.bending.api.ability.AbilityContext
 import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
+import pw.dotdash.bending.api.ability.AbilityExecutionType
+import pw.dotdash.bending.api.ability.CoroutineAbility
+import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.protection.BuildProtectionService
 import pw.dotdash.bending.api.protection.PvpProtectionService
 import pw.dotdash.bending.api.util.*
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 import kotlin.math.max
 import kotlin.random.Random
@@ -41,6 +46,11 @@ data class FireWallAbility(
         width = node.getNode("width").int,
         height = node.getNode("height").int
     )
+
+    override val plugin: PluginContainer
+        get() = BendingClassic.PLUGIN
+
+    private val damageRadiusSquared: Double = 1.5 * 1.5
 
     override suspend fun CoroutineTask.activate(context: AbilityContext, executionType: AbilityExecutionType) {
         val player: Player = context.require(PLAYER)
@@ -115,6 +125,7 @@ data class FireWallAbility(
 
     private fun damage(source: Player, origin: Location<World>, locations: List<Location<World>>) {
         val radius: Int = max(this.width, this.height) + 1
+
         for (entity: Entity in origin.getNearbyEntities(radius.toDouble())) {
             if (entity is Player && PvpProtectionService.getInstance().isProtected(source, entity)) {
                 // Can't fight here!
@@ -122,7 +133,7 @@ data class FireWallAbility(
             }
 
             for (location: Location<World> in locations) {
-                if (entity.location.distanceSquared(location) <= 1.5 * 1.5) {
+                if (entity.location.distanceSquared(location) <= this.damageRadiusSquared) {
                     affect(entity)
                     break
                 }

@@ -6,14 +6,17 @@ import org.spongepowered.api.effect.particle.ParticleEffect
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.player.Player
-import org.spongepowered.api.event.cause.Cause
+import org.spongepowered.api.plugin.PluginContainer
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
-import pw.dotdash.bending.api.ability.*
+import pw.dotdash.bending.api.ability.AbilityContext
+import pw.dotdash.bending.api.ability.AbilityContextKeys.BENDER
+import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
+import pw.dotdash.bending.api.ability.AbilityExecutionType
 import pw.dotdash.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
 import pw.dotdash.bending.api.ability.AbilityExecutionTypes.SNEAK
-import pw.dotdash.bending.api.ability.AbilityContext
-import pw.dotdash.bending.api.ability.AbilityContextKeys.*
+import pw.dotdash.bending.api.ability.CoroutineAbility
+import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.bender.Bender
 import pw.dotdash.bending.api.effect.EffectService
 import pw.dotdash.bending.api.element.Elements
@@ -22,6 +25,7 @@ import pw.dotdash.bending.api.ray.AirRaycast
 import pw.dotdash.bending.api.ray.FastRaycast
 import pw.dotdash.bending.api.ray.pushEntity
 import pw.dotdash.bending.api.util.*
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 import java.util.concurrent.CompletableFuture
 import kotlin.random.Random
@@ -57,20 +61,16 @@ data class AirBlastAbility(
         numParticles = node.getNode("numParticles").int
     )
 
+    override val plugin: PluginContainer get() = BendingClassic.PLUGIN
+
     private val particleEffect: ParticleEffect =
         EffectService.getInstance().createParticle(Elements.AIR, this.numParticles, VectorUtil.VECTOR_0_275)
-
-    override fun prepare(cause: Cause, context: AbilityContext) {
-        val player: Player = cause.first(Player::class.java).get()
-
-        context[ORIGIN] = player.eyeLocation
-    }
 
     override suspend fun CoroutineTask.activate(context: AbilityContext, executionType: AbilityExecutionType) {
         val player: Player = context.require(PLAYER)
 
         when (executionType) {
-            LEFT_CLICK -> this.runLeftClickMode(context, player, false)
+            LEFT_CLICK -> this.runLeftClickMode(player.eyeLocation, player, false)
             SNEAK -> this.runSneakMode(context, player)
         }
     }
@@ -78,11 +78,9 @@ data class AirBlastAbility(
     private suspend fun CoroutineTask.runSneakMode(context: AbilityContext, player: Player) {
         val origin: Location<World> = player.getTargetLocation(selectRange)
 
-        context[ORIGIN] = origin
-
         val bender: Bender = context.require(BENDER)
         val defer: CompletableFuture<Void> = bender.waitForExecution(type, LEFT_CLICK)
-        abilityLoop {
+        abilityLoopUnsafe {
             if (player.isRemoved) {
                 defer.cancel(false)
                 return
@@ -99,20 +97,17 @@ data class AirBlastAbility(
                     return
                 }
 
-                this.runLeftClickMode(context, player, true)
+                this.runLeftClickMode(origin, player, true)
                 return
             }
         }
-
-        return
     }
 
-    private suspend fun CoroutineTask.runLeftClickMode(context: AbilityContext, player: Player, canPushSelf: Boolean) {
+    private suspend fun CoroutineTask.runLeftClickMode(origin: Location<World>, player: Player, canPushSelf: Boolean) {
         if (player.eyeLocation.blockType.isLiquid()) return
 
         val affectedLocations = HashSet<Location<World>>()
         val affectedEntities = HashSet<Entity>()
-        val origin: Location<World> = context.require(ORIGIN)
         val direction: Vector3d = player.headDirection.normalize()
 
         val raycast = FastRaycast(
@@ -152,7 +147,7 @@ data class AirBlastAbility(
                 }
 
                 if (current.blockType.isSolid() || current.blockType.isLiquid()) {
-                    return
+                    return@progress false
                 }
 
                 return@progress true

@@ -18,10 +18,13 @@ import pw.dotdash.bending.api.event.ExecuteAbilityEvent
 import pw.dotdash.bending.api.event.SetCooldownEvent
 import pw.dotdash.bending.api.util.selectedSlotIndex
 import pw.dotdash.bending.api.util.unwrap
+import pw.dotdash.bending.plugin.Bending
 import pw.dotdash.bending.plugin.ability.SimpleAbilityContext
 import pw.dotdash.bending.plugin.ability.SimpleAbilityTask
 import pw.dotdash.bending.plugin.data.DataQueries
+import pw.dotdash.bending.plugin.util.set
 import java.util.*
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import kotlin.collections.Collection
 import kotlin.collections.List
@@ -154,18 +157,15 @@ class SimpleBender(private val uniqueId: UUID) : Bender {
     }
 
     override fun waitForExecution(type: AbilityType, executionType: AbilityExecutionType): CompletableFuture<Void?> {
-        TODO()
-//        val future = CompletableFuture<Void?>().whenComplete { result: Void?, t: Throwable? ->
-//            this.waitingMap.remove(type, executionType)?.cancel(false)
-//            if (t != null) {
-//                if (t !is CancellationException) {
-//                    Bending.LOGGER.error("Ability failed to execute", t)
-//                }
-//            } else {
-//            }
-//        }
-//        this.waitingMap[type, executionType] = future
-//        return future
+        val future: CompletableFuture<Void?> = CompletableFuture<Void?>().whenComplete { _: Void?, t: Throwable? ->
+            this.waitingMap.remove(type, executionType)
+
+            if (t != null && t !is CancellationException) {
+                Bending.LOGGER.error("Ability failed to execute", t)
+            }
+        }
+        this.waitingMap.put(type, executionType, future)?.cancel(false)
+        return future
     }
 
     override fun cancel(type: AbilityType): Boolean {

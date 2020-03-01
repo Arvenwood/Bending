@@ -7,7 +7,6 @@ import org.spongepowered.api.Sponge
 import org.spongepowered.api.config.ConfigDir
 import org.spongepowered.api.event.Listener
 import org.spongepowered.api.event.game.GameRegistryEvent
-import org.spongepowered.api.event.game.GameReloadEvent
 import org.spongepowered.api.event.game.state.*
 import org.spongepowered.api.plugin.Plugin
 import pw.dotdash.bending.api.ability.*
@@ -25,7 +24,6 @@ import pw.dotdash.bending.plugin.ability.*
 import pw.dotdash.bending.plugin.bender.SimpleBenderService
 import pw.dotdash.bending.plugin.command.CommandBending
 import pw.dotdash.bending.plugin.element.SimpleElement
-import pw.dotdash.bending.plugin.feature.FeatureManager
 import pw.dotdash.bending.plugin.protection.SimpleBuildProtectionService
 import pw.dotdash.bending.plugin.protection.SimplePvpProtectionService
 import pw.dotdash.bending.plugin.registry.*
@@ -100,14 +98,6 @@ class Bending @Inject constructor(
             .registerModule<Element>(ElementRegistryModule)
             .registerModule<BuildProtection>(BuildProtectionRegistryModule)
             .registerModule<PvpProtection>(PvpProtectionRegistryModule)
-    }
-
-    @Listener
-    fun onInit(event: GameInitializationEvent) {
-        this.logger.info("Enabling available plugin integrations...")
-
-        val manager = FeatureManager()
-        manager.register(this, this.logger)
 
         this.logger.info("Registering services...")
 
@@ -117,7 +107,10 @@ class Bending @Inject constructor(
 
         this.transientBlockService = SimpleTempBlockService()
         Sponge.getServiceManager().setProvider<TempBlockService>(this, this.transientBlockService)
+    }
 
+    @Listener
+    fun onInit(event: GameInitializationEvent) {
         this.logger.info("Registering commands...")
 
         Sponge.getCommandManager().register(this, CommandBending.SPEC, "bending", "b")

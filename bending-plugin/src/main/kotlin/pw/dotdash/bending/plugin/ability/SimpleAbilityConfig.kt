@@ -1,29 +1,25 @@
 package pw.dotdash.bending.plugin.ability
 
-import pw.dotdash.bending.api.ability.Ability
 import pw.dotdash.bending.api.ability.AbilityConfig
-import pw.dotdash.bending.api.ability.AbilityType
-import java.util.*
-import java.util.function.Function
+import pw.dotdash.bending.api.ability.AbilityConfigLoader
 
 data class SimpleAbilityConfig(
     private val id: String,
     private val name: String,
-    private val loader: Function<AbilityType, Optional<Ability>>
+    private val loader: AbilityConfigLoader
 ) : AbilityConfig {
 
     override fun getId(): String = this.id
 
     override fun getName(): String = this.name
 
-    override fun load(type: AbilityType): Optional<Ability> =
-        this.loader.apply(type)
+    override fun getLoader(): AbilityConfigLoader = this.loader
 
     class Builder : AbilityConfig.Builder {
 
         private var id: String? = null
         private var name: String? = null
-        private var loader: Function<AbilityType, Optional<Ability>>? = null
+        private var loader: AbilityConfigLoader? = null
 
         override fun id(id: String): AbilityConfig.Builder {
             this.id = id
@@ -35,7 +31,7 @@ data class SimpleAbilityConfig(
             return this
         }
 
-        override fun loader(loader: Function<AbilityType, Optional<Ability>>): AbilityConfig.Builder {
+        override fun loader(loader: AbilityConfigLoader): AbilityConfig.Builder {
             this.loader = loader
             return this
         }
@@ -52,7 +48,7 @@ data class SimpleAbilityConfig(
         override fun from(value: AbilityConfig): AbilityConfig.Builder {
             this.id = value.id
             this.name = value.name
-            this.loader = Function(value::load)
+            this.loader = value.loader
             return this
         }
 

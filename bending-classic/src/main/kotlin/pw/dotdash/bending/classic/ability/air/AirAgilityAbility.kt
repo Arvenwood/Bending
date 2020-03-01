@@ -6,15 +6,17 @@ import org.spongepowered.api.effect.potion.PotionEffect
 import org.spongepowered.api.effect.potion.PotionEffectTypes.JUMP_BOOST
 import org.spongepowered.api.effect.potion.PotionEffectTypes.SPEED
 import org.spongepowered.api.entity.living.player.Player
-import pw.dotdash.bending.api.ability.CoroutineAbility
+import org.spongepowered.api.plugin.PluginContainer
 import pw.dotdash.bending.api.ability.AbilityContext
 import pw.dotdash.bending.api.ability.AbilityContextKeys.BENDER
 import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
 import pw.dotdash.bending.api.ability.AbilityExecutionType
 import pw.dotdash.bending.api.ability.AbilityExecutionTypes.SPRINT_OFF
 import pw.dotdash.bending.api.ability.AbilityExecutionTypes.SPRINT_ON
+import pw.dotdash.bending.api.ability.CoroutineAbility
 import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.bender.Bender
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 
 data class AirAgilityAbility(
@@ -27,6 +29,9 @@ data class AirAgilityAbility(
         jumpPower = node.getNode("jumpPower").int,
         speedPower = node.getNode("speedPower").int
     )
+
+    override val plugin: PluginContainer
+        get() = BendingClassic.PLUGIN
 
     private val effectJump: PotionEffect =
         PotionEffect.builder()

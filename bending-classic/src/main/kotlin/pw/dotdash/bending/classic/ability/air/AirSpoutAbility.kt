@@ -1,20 +1,24 @@
 package pw.dotdash.bending.classic.ability.air
 
 import ninja.leaping.configurate.ConfigurationNode
-import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.effect.particle.ParticleEffect
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.living.player.Player
+import org.spongepowered.api.plugin.PluginContainer
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
-import pw.dotdash.bending.api.ability.*
+import pw.dotdash.bending.api.ability.AbilityContext
 import pw.dotdash.bending.api.ability.AbilityContextKeys.BENDER
 import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
+import pw.dotdash.bending.api.ability.AbilityExecutionType
 import pw.dotdash.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
+import pw.dotdash.bending.api.ability.CoroutineAbility
+import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.bender.Bender
 import pw.dotdash.bending.api.effect.EffectService
 import pw.dotdash.bending.api.element.Elements
 import pw.dotdash.bending.api.util.*
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 import java.util.concurrent.CompletableFuture
 import kotlin.math.min
@@ -33,6 +37,9 @@ data class AirSpoutAbility(
         height = node.getNode("height").double
     )
 
+    override val plugin: PluginContainer
+        get() = BendingClassic.PLUGIN
+
     private val particleEffect: ParticleEffect = EffectService.getInstance().createParticle(Elements.AIR, 3, VectorUtil.VECTOR_0_4)
 
     override suspend fun CoroutineTask.activate(context: AbilityContext, executionType: AbilityExecutionType) {
@@ -42,12 +49,14 @@ data class AirSpoutAbility(
         var animationTime: EpochTime = EpochTime.now()
 
         val startTime: EpochTime = EpochTime.now()
-        val defer: CompletableFuture<Void> = bender.waitForExecution(type, LEFT_CLICK) // TODO: cancel after execution if not done by then
+        val defer: CompletableFuture<Void> = bender.waitForExecution(type, LEFT_CLICK)
         abilityLoopUnsafe {
             if (player.isRemoved) {
+                defer.cancel(false)
                 return
             }
             if (startTime.elapsedNow() >= duration) {
+                defer.cancel(false)
                 return
             }
             if (defer.isDone) {
@@ -56,6 +65,7 @@ data class AirSpoutAbility(
 
             val eyeLocation: Location<World> = player.eyeLocation
             if (eyeLocation.blockType.isWater() || eyeLocation.blockType.isSolid()) {
+                defer.cancel(false)
                 return
             }
 

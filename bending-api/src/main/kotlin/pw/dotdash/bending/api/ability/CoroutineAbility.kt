@@ -1,9 +1,12 @@
 package pw.dotdash.bending.api.ability
 
 import org.spongepowered.api.event.cause.Cause
+import org.spongepowered.api.plugin.PluginContainer
 import kotlin.coroutines.startCoroutine
 
 abstract class CoroutineAbility(open val cooldownMilli: Long, private val type: AbilityType) : Ability {
+
+    abstract val plugin: PluginContainer
 
     override fun getCooldown(): Long = this.cooldownMilli
 
@@ -18,7 +21,7 @@ abstract class CoroutineAbility(open val cooldownMilli: Long, private val type: 
     abstract suspend fun CoroutineTask.activate(context: AbilityContext, executionType: AbilityExecutionType)
 
     override fun execute(context: AbilityContext, executionType: AbilityExecutionType, task: AbilityTask) {
-        val coroutine = CoroutineTask(task)
+        val coroutine = CoroutineTask(task, this.plugin)
         val block: suspend CoroutineTask.() -> Unit = {
             try {
                 this.start()

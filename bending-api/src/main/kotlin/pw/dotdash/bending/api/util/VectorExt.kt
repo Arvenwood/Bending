@@ -24,48 +24,8 @@ fun Vector3d.setZ(z: Double): Vector3d =
  * @receiver The axis vector
  */
 fun Vector3d.getOrthogonal(degrees: Double, length: Double): Vector3d {
-    val orthogonal = Vector3d(y, -x, 0.0).normalize().mul(length)
-    return this.rotateAround(orthogonal, degrees)
-}
-
-fun Vector3d.getOrthogonal(direction: Vector3d): Vector3d =
-    this.getOrthogonal(Math.toDegrees(direction.angle(this)), 1.0)
-
-fun Vector3d.rotateAround(other: Vector3d, degrees: Double): Vector3d {
+    val orthogonal: Vector3d = Vector3d(y, -x, 0.0).normalize().mul(length)
     val angle: Double = Math.toRadians(degrees)
-    val thirdAxis: Vector3d = this.cross(other).normalize().mul(other.length())
-    return other.mul(cos(angle)).add(thirdAxis.mul(sin(angle)))
-}
-
-fun Vector3d.rotateAroundAxis(direction: Vector3d): Vector3d =
-    this.rotateAroundAxisX(direction.x).rotateAroundAxisY(-direction.y).rotateAroundAxisZ(direction.z)
-
-fun Vector3d.rotateAroundAxisX(angle: Double): Vector3d {
-    val sin: Double = sin(angle)
-    val cos: Double = cos(angle)
-    return Vector3d(
-        this.x,
-        this.y * cos - this.z * sin,
-        this.y * sin + this.z * cos
-    )
-}
-
-fun Vector3d.rotateAroundAxisY(angle: Double): Vector3d {
-    val sin: Double = sin(angle)
-    val cos: Double = cos(angle)
-    return Vector3d(
-        this.x * cos + this.z * sin,
-        this.y,
-        this.x * -sin + this.z * cos
-    )
-}
-
-fun Vector3d.rotateAroundAxisZ(angle: Double): Vector3d {
-    val sin: Double = sin(angle)
-    val cos: Double = cos(angle)
-    return Vector3d(
-        this.x * cos - this.y * sin,
-        this.x * sin + this.y * cos,
-        this.z
-    )
+    val thirdAxis: Vector3d = this.cross(orthogonal).normalize().mul(orthogonal.length())
+    return orthogonal.mul(cos(angle)).add(thirdAxis.mul(sin(angle)))
 }

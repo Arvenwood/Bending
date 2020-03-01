@@ -6,6 +6,7 @@ import org.spongepowered.api.event.Listener
 import org.spongepowered.api.event.game.GameRegistryEvent
 import org.spongepowered.api.plugin.Dependency
 import org.spongepowered.api.plugin.Plugin
+import org.spongepowered.api.plugin.PluginContainer
 import pw.dotdash.bending.api.ability.AbilityType
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 
@@ -16,7 +17,16 @@ import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
     dependencies = [Dependency(id = "bending")],
     authors = ["doot"]
 )
-class BendingClassic @Inject constructor(private val logger: Logger) {
+class BendingClassic @Inject constructor(private val logger: Logger, plugin: PluginContainer) {
+
+    companion object {
+        internal lateinit var PLUGIN: PluginContainer
+            private set
+    }
+
+    init {
+        PLUGIN = plugin
+    }
 
     @Listener
     fun onRegisterAbility(event: GameRegistryEvent.Register<AbilityType>) {

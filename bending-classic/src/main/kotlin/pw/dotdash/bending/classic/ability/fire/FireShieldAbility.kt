@@ -11,15 +11,17 @@ import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.Living
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.entity.projectile.Projectile
+import org.spongepowered.api.plugin.PluginContainer
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
-import pw.dotdash.bending.api.ability.*
+import pw.dotdash.bending.api.ability.AbilityContext
 import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
+import pw.dotdash.bending.api.ability.AbilityExecutionType
+import pw.dotdash.bending.api.ability.CoroutineAbility
+import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.protection.PvpProtectionService
-import pw.dotdash.bending.api.util.EpochTime
-import pw.dotdash.bending.api.util.getNearbyEntities
-import pw.dotdash.bending.api.util.getNearbyLocations
-import pw.dotdash.bending.api.util.spawnParticles
+import pw.dotdash.bending.api.util.*
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 import kotlin.math.cos
 import kotlin.math.sin
@@ -38,6 +40,9 @@ data class FireShieldAbility(
         fireTicks = node.getNode("fireTicks").int
     )
 
+    override val plugin: PluginContainer
+        get() = BendingClassic.PLUGIN
+
     private val particleFlame: ParticleEffect = ParticleEffect.builder()
         .type(ParticleTypes.FLAME)
         .quantity(3)
@@ -50,12 +55,12 @@ data class FireShieldAbility(
         .offset(Vector3d.ZERO)
         .build()
 
-    private val offsets: Array<List<Vector3d>> = this.calculateOffsets()
+    private val offsets: Array<Array<Vector3d>> = this.calculateOffsets()
 
     override suspend fun CoroutineTask.activate(context: AbilityContext, executionType: AbilityExecutionType) {
         val player: Player = context.require(PLAYER)
 
-        var index = 0
+        val iterator: Iterator<Array<Vector3d>> = offsets.loopedIterator()
         val startTime: EpochTime = EpochTime.now()
         abilityLoopUnsafe {
             if (!player.getOrElse(Keys.IS_SNEAKING, false)) {
@@ -65,24 +70,21 @@ data class FireShieldAbility(
                 return
             }
 
-            for (offset: Vector3d in offsets[index]) {
-                val displayLocation: Location<World> = player.location.add(offset)
+            if (iterator.hasNext()) {
+                for (offset: Vector3d in iterator.next()) {
+                    val displayLocation: Location<World> = player.location.add(offset)
 
-                if (Random.nextInt(6) == 0) {
-                    displayLocation.spawnParticles(particleFlame)
+                    if (Random.nextInt(6) == 0) {
+                        displayLocation.spawnParticles(particleFlame)
+                    }
+                    if (Random.nextInt(4) == 0) {
+                        displayLocation.spawnParticles(particleSmoke)
+                    }
+                    if (Random.nextInt(7) == 0) {
+                        // Play fire bending sound, every now and then.
+                        player.world.playSound(SoundTypes.BLOCK_FIRE_AMBIENT, player.position, 0.5, 1.0)
+                    }
                 }
-                if (Random.nextInt(4) == 0) {
-                    displayLocation.spawnParticles(particleSmoke)
-                }
-                if (Random.nextInt(7) == 0) {
-                    // Play fire bending sound, every now and then.
-                    player.world.playSound(SoundTypes.BLOCK_FIRE_AMBIENT, player.position, 0.5, 1.0)
-                }
-            }
-
-            index++
-            if (index == 3) {
-                index = 0
             }
 
             for (test: Location<World> in player.location.getNearbyLocations(radius)) {
@@ -106,7 +108,7 @@ data class FireShieldAbility(
         }
     }
 
-    private fun calculateOffsets(): Array<List<Vector3d>> =
+    private fun calculateOffsets(): Array<Array<Vector3d>> =
         Array(3) { index: Int ->
             val offsets = ArrayList<Vector3d>()
             val increment: Int = index * 20 + 20
@@ -127,6 +129,6 @@ data class FireShieldAbility(
                 }
             }
 
-            offsets
+            offsets.toTypedArray()
         }
 }

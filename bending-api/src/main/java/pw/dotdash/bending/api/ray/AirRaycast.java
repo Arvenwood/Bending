@@ -97,7 +97,15 @@ public final class AirRaycast {
             knockback *= 0.85;
         }
 
-        Vector3d push = ray.getDirection().normalize().mul(knockback);
+        final double max = ray.getSpeed() / ray.getSpeedFactor();
+
+        Vector3d push = ray.getDirection();
+        if (Math.abs(push.getY()) > max && !isSelf) {
+            push = VectorUtil.setY(push, push.getY() < 0 ? -max : max);
+        }
+
+        push = push.normalize().mul(knockback);
+
         if (Math.abs(target.getVelocity().dot(push)) > knockback
                 && VectorUtil.getAngleBetween(target.getVelocity(), push) > Math.PI / 3) {
             push = push.normalize().add(target.getVelocity()).mul(knockback);

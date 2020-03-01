@@ -7,15 +7,20 @@ import org.spongepowered.api.data.key.Keys
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.player.Player
+import org.spongepowered.api.plugin.PluginContainer
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
-import pw.dotdash.bending.api.ability.*
+import pw.dotdash.bending.api.ability.AbilityContext
 import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
+import pw.dotdash.bending.api.ability.AbilityExecutionType
+import pw.dotdash.bending.api.ability.CoroutineAbility
+import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.effect.EffectService
 import pw.dotdash.bending.api.element.Elements
 import pw.dotdash.bending.api.protection.BuildProtectionService
 import pw.dotdash.bending.api.protection.PvpProtectionService
 import pw.dotdash.bending.api.util.*
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 import kotlin.math.cos
 import kotlin.math.sin
@@ -43,6 +48,9 @@ data class AirShieldAbility(
         numStreams = node.getNode("numStreams").int,
         particles = node.getNode("particles").int
     )
+
+    override val plugin: PluginContainer
+        get() = BendingClassic.PLUGIN
 
     private val offsetSize: Int = ((this.maxRadius - this.initialRadius) / 0.3).toInt()
 

@@ -7,19 +7,23 @@ import org.spongepowered.api.effect.particle.ParticleEffect
 import org.spongepowered.api.effect.sound.SoundTypes
 import org.spongepowered.api.entity.Entity
 import org.spongepowered.api.entity.living.player.Player
+import org.spongepowered.api.plugin.PluginContainer
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
-import pw.dotdash.bending.api.ability.*
+import pw.dotdash.bending.api.ability.AbilityContext
 import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
+import pw.dotdash.bending.api.ability.AbilityExecutionType
 import pw.dotdash.bending.api.ability.AbilityExecutionTypes.LEFT_CLICK
+import pw.dotdash.bending.api.ability.CoroutineAbility
+import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.effect.EffectService
 import pw.dotdash.bending.api.element.Elements
 import pw.dotdash.bending.api.protection.BuildProtectionService
 import pw.dotdash.bending.api.ray.FastRaycast
-import pw.dotdash.bending.api.ray.advanceAll
 import pw.dotdash.bending.api.ray.progressAll
 import pw.dotdash.bending.api.ray.pushEntity
 import pw.dotdash.bending.api.util.*
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 import kotlin.math.cos
 import kotlin.math.sin
@@ -52,44 +56,46 @@ data class AirSwipeAbility(
         numParticles = node.getNode("numParticles").int
     )
 
+    override val plugin: PluginContainer
+        get() = BendingClassic.PLUGIN
+
     private val arcRadians: Double = Math.toRadians(this.arcDegrees)
     private val arcIncrementRadians: Double = Math.toRadians(this.arcIncrementDegrees)
 
-    private val particleEffect: ParticleEffect = EffectService.getInstance().createParticle(Elements.AIR, this.numParticles, VectorUtil.VECTOR_0_2)
+    private val particleEffect: ParticleEffect =
+        EffectService.getInstance().createParticle(Elements.AIR, this.numParticles, VectorUtil.VECTOR_0_2)
 
     private val transformationMatrices: Array<Matrix3d> = this.createTransformationMatrices().toTypedArray()
 
     override suspend fun CoroutineTask.activate(context: AbilityContext, executionType: AbilityExecutionType) {
         val player: Player = context.require(PLAYER)
 
-        when (executionType) {
-            LEFT_CLICK -> {
-                this.swipe(player, player.eyeLocation, damage, pushFactor)
-            }
-            else -> {
-                var charged = false
-                val startTime: EpochTime = EpochTime.now()
+        if (executionType == LEFT_CLICK) {
+            this.swipe(player, player.eyeLocation, damage, pushFactor)
+        } else {
+            var charged = false
+            val startTime: EpochTime = EpochTime.now()
 
-                abilityLoopUnsafe {
-                    val currentTime: EpochTime = EpochTime.now()
+            abilityLoopUnsafe {
+                val currentTime: EpochTime = EpochTime.now()
 
-                    if (startTime.elapsed(currentTime) >= chargeTime) {
-                        charged = true
+                if (startTime.elapsed(currentTime) >= chargeTime) {
+                    charged = true
+                }
+
+                if (!player.isSneaking) {
+                    val factor: Double = if (charged) {
+                        maxChargeFactor
+                    } else {
+                        maxChargeFactor * (startTime.elapsed(currentTime)) / chargeTime
                     }
 
-                    if (!player.isSneaking) {
-                        val factor: Double = if (charged) {
-                            maxChargeFactor
-                        } else {
-                            maxChargeFactor * (startTime.elapsed(currentTime)) / chargeTime
-                        }
+                    this.swipe(player, player.eyeLocation, damage * factor, pushFactor * factor)
+                    return
+                }
 
-                        return this.swipe(player, player.eyeLocation, damage * factor, pushFactor * factor)
-                    }
-
-                    if (charged) {
-                        player.eyeLocation.spawnParticles(particleEffect)
-                    }
+                if (charged) {
+                    player.eyeLocation.spawnParticles(particleEffect)
                 }
             }
         }

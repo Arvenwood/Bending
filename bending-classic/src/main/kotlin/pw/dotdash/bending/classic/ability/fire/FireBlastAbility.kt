@@ -11,11 +11,15 @@ import org.spongepowered.api.entity.living.Living
 import org.spongepowered.api.entity.living.player.Player
 import org.spongepowered.api.event.cause.Cause
 import org.spongepowered.api.event.cause.entity.damage.source.DamageSources
+import org.spongepowered.api.plugin.PluginContainer
 import org.spongepowered.api.world.Location
 import org.spongepowered.api.world.World
-import pw.dotdash.bending.api.ability.*
+import pw.dotdash.bending.api.ability.AbilityContext
 import pw.dotdash.bending.api.ability.AbilityContextKeys.ORIGIN
 import pw.dotdash.bending.api.ability.AbilityContextKeys.PLAYER
+import pw.dotdash.bending.api.ability.AbilityExecutionType
+import pw.dotdash.bending.api.ability.CoroutineAbility
+import pw.dotdash.bending.api.ability.CoroutineTask
 import pw.dotdash.bending.api.protection.BuildProtectionService
 import pw.dotdash.bending.api.protection.PvpProtectionService
 import pw.dotdash.bending.api.ray.FastRaycast
@@ -23,6 +27,7 @@ import pw.dotdash.bending.api.util.eyeLocation
 import pw.dotdash.bending.api.util.headDirection
 import pw.dotdash.bending.api.util.isLiquid
 import pw.dotdash.bending.api.util.isSolid
+import pw.dotdash.bending.classic.BendingClassic
 import pw.dotdash.bending.classic.ability.ClassicAbilityTypes
 import kotlin.random.Random
 
@@ -50,6 +55,9 @@ data class FireBlastAbility(
         flameRadius = node.getNode("flameRadius").double,
         smokeRadius = node.getNode("smokeRadius").double
     )
+
+    override val plugin: PluginContainer
+        get() = BendingClassic.PLUGIN
 
     private val particleFlame: ParticleEffect = ParticleEffect.builder()
         .type(ParticleTypes.FLAME)

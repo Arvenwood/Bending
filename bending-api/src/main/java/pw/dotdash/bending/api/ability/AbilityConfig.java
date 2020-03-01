@@ -43,13 +43,17 @@ public interface AbilityConfig extends CatalogType {
         return Sponge.getRegistry().getAllOf(AbilityConfig.class);
     }
 
+    AbilityConfigLoader getLoader();
+
     /**
      * Loads the ability configuration for the given {@link AbilityType}.
      *
      * @param type The ability type to load
      * @return The ability configuration, if available
      */
-    Optional<Ability> load(AbilityType type);
+    default Optional<Ability> load(AbilityType type) {
+        return getLoader().load(type);
+    }
 
     /**
      * Represents a builder to create a {@link AbilityConfig}.
@@ -79,12 +83,12 @@ public interface AbilityConfig extends CatalogType {
          * @param loader The ability type configuration loader
          * @return This builder, for chaining
          */
-        Builder loader(Function<AbilityType, Optional<Ability>> loader);
+        Builder loader(AbilityConfigLoader loader);
 
         /**
          * Builds a new {@link AbilityExecutionType}, provided that the
          * {@link #id(String)}, {@link #name(String)}, and
-         * {@link #loader(Function)} are set, and an{@link AbilityType} is
+         * {@link #loader(AbilityConfigLoader)} are set, and an{@link AbilityType} is
          * registered.
          *
          * @return The generated AbilityConfig
