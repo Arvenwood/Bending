@@ -156,3 +156,20 @@ inline fun Iterable<FastRaycast>.advanceAll(block: FastRaycast.(location: Locati
     }
     return successful
 }
+
+/**
+ * @return True if any of the rays succeeded
+ */
+inline fun Array<FastRaycast>.progressAll(block: FastRaycast.(location: Location<World>) -> Boolean): Boolean {
+    var successful = false
+    for (projectile: FastRaycast in this) {
+        val result: Boolean = projectile.progress { location: Location<World> ->
+            this.block(location)
+        }
+
+        if (result) {
+            successful = true
+        }
+    }
+    return successful
+}
