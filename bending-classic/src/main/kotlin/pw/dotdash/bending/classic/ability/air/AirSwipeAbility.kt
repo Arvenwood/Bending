@@ -1,5 +1,6 @@
 package pw.dotdash.bending.classic.ability.air
 
+import com.flowpowered.math.matrix.Matrix3d
 import com.flowpowered.math.vector.Vector3d
 import ninja.leaping.configurate.ConfigurationNode
 import org.spongepowered.api.effect.particle.ParticleEffect
@@ -54,6 +55,8 @@ data class AirSwipeAbility(
     private val arcIncrementRadians: Double = Math.toRadians(this.arcIncrementDegrees)
 
     private val particleEffect: ParticleEffect = EffectService.getInstance().createParticle(Elements.AIR, this.numParticles, VectorUtil.VECTOR_0_2)
+
+    private val transformationMatrices: List<Matrix3d> = this.createTransformationMatrices()
 
     override suspend fun CoroutineTask.activate(context: AbilityContext, executionType: AbilityExecutionType) {
         val player: Player = context.require(PLAYER)
@@ -121,26 +124,31 @@ data class AirSwipeAbility(
         }
     }
 
-    private fun createRaycasts(origin: Location<World>, direction: Vector3d): List<FastRaycast> {
-        val raycasts = ArrayList<FastRaycast>()
-
-        forInclusive(from = -this.arcRadians, to = this.arcRadians, step = this.arcIncrementRadians) { angle: Double ->
-            val sinAngle: Double = sin(angle)
-            val cosAngle: Double = cos(angle)
-
-            val vx: Double = direction.x * cosAngle - direction.z * sinAngle
-            val vz: Double = direction.x * sinAngle + direction.z * cosAngle
-
-            raycasts += FastRaycast(
+    private fun createRaycasts(origin: Location<World>, direction: Vector3d): List<FastRaycast> =
+        this.transformationMatrices.map { matrix: Matrix3d ->
+            FastRaycast(
                 origin = origin,
-                direction = Vector3d(vx, direction.y, vz),
+                direction = matrix.transform(direction),
                 range = this.range,
                 speed = this.speed,
                 checkDiagonals = true
             )
         }
 
-        return raycasts
-    }
+    private fun createTransformationMatrices(): List<Matrix3d> {
+        val matrices = ArrayList<Matrix3d>()
 
+        forInclusive(from = -this.arcRadians, to = this.arcRadians, step = this.arcIncrementRadians) { angle: Double ->
+            val sinAngle: Double = sin(angle)
+            val cosAngle: Double = cos(angle)
+
+            matrices += Matrix3d(
+                cosAngle, 0.0, -sinAngle,
+                0.0, 1.0, 0.0,
+                sinAngle, 0.0, cosAngle
+            )
+        }
+
+        return matrices
+    }
 }
