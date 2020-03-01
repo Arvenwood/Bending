@@ -1,23 +1,17 @@
 plugins {
     java
-    kotlin("jvm") version "1.3.61"
-    kotlin("kapt") version "1.3.61"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.3.60"
-    id("com.github.johnrengelman.shadow") version "4.0.4"
+    kotlin("jvm")
+    kotlin("kapt")
 
-    id("com.qixalite.spongestart2") version "4.0.0"
+    id("com.github.johnrengelman.shadow")
 }
 
-group = "arvenwood"
+group = "pw.dotdash"
 version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
-
     maven("https://repo.spongepowered.org/maven")
-
-    // PlaceholderAPI
-    maven("https://jitpack.io")
 }
 
 dependencies {
@@ -25,20 +19,19 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0")
+
+    // Bending API
+    implementation(project(":bending-api"))
 
     // Shaded
     runtime(kotlin("stdlib-jdk8"))
     runtime(kotlin("reflect"))
     runtime("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
-    runtime("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0")
+    runtime(project(":bending-api"))
 
     // Sponge
     compileOnly("org.spongepowered:spongeapi:7.1.0")
     kapt("org.spongepowered:spongeapi:7.1.0")
-
-    // PlaceholderAPI
-    compileOnly("com.github.ronaldburns:PlaceholderAPI:4.5.1")
 }
 
 configure<JavaPluginConvention> {
@@ -58,10 +51,6 @@ tasks {
     shadowJar {
         archiveClassifier.set("dist")
     }
-}
-
-spongestart {
-    minecraft = "1.12.2"
 }
 
 artifacts {
